@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@layer theme {
+  :root {
+    --color-primary: #3b82f6;
+    --color-primary-dark: #1d4ed8;
+    --color-accent: #6366f1;
+    --color-background-light: #f3f4f6;
+    --color-surface-light: #ffffff;
+    --color-brut-black: #000000;
+
+    --font-display: Inter, sans-serif;
+    --font-body: Inter, sans-serif;
+
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 2rem;
+
+    --shadow-brutalist: 4px 4px 0px 0px #000000;
+    --shadow-brutalist-hover: 2px 2px 0px 0px #000000;
+    --shadow-brutalist-thick: 8px 8px 0px 0px #000000;
+    --shadow-brutalist-thick-hover: 4px 4px 0px 0px #000000;
+
+    --animate-float-slow: float 8s ease-in-out infinite;
+    --animate-float-medium: float 6s ease-in-out infinite;
+    --animate-float-fast: float 4s ease-in-out infinite;
+    --animate-fade-in-up: fadeInUp 0.8s ease-out forwards;
+  }
+}
+
+/* Define keyframes locally since v4 theme configuration is different */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pill-solid {
+  @apply bg-white border-2 border-black;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.1);
+}
+
+.text-stroke-1 {
+  -webkit-text-stroke: 1px black;
+}
+
+.dark .text-stroke-1 {
+  -webkit-text-stroke: 1px white;
+}
