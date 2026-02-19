@@ -1,280 +1,344 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-    Search, Bell, User, Home, MessageSquare, TrendingUp, Bookmark,
-    Plus, Heart, Repeat, Link as LinkIcon, Bold, Italic,
-    Lightbulb, GraduationCap, ArrowLeft, MoreHorizontal, Share2, Check
+    Home, TrendingUp, Users, Bookmark, Bell, MoreHorizontal,
+    ArrowLeft, Share, MessageCircle, Heart, Lightbulb,
+    Bold, Italic, Link as LinkIcon, Coffee, Monitor, Plus
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
 
 const PostThreadPage = () => {
-    const [isDarkMode, setIsDarkMode] = useState(true); // Default to dark as per user HTML example
-    const navigate = useNavigate();
-
-    // Toggle dark class on html element
-    useEffect(() => {
-        if (isDarkMode) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [isDarkMode]);
-
-    const toggleTheme = () => setIsDarkMode(!isDarkMode);
+    // State to simulate "Reveal Original" toggle
+    const [showOriginal, setShowOriginal] = useState(false);
 
     return (
-        <div className={`min-h-screen transition-colors duration-300 font-sans selection:bg-primary selection:text-white ${isDarkMode ? 'bg-[#121212] text-slate-100' : 'bg-gray-50 text-slate-900'}`}>
+        <div className="bg-[#f6f6f8] dark:bg-[#0A0A0F] font-display text-slate-900 dark:text-slate-100 antialiased min-h-screen selection:bg-[#2513ec]/30 selection:text-white">
+            <div className="flex min-h-screen w-full flex-row">
+                {/* Left Sidebar (Fixed width) */}
+                <div className="hidden lg:flex w-72 flex-col fixed inset-y-0 left-0 border-r border-slate-200 dark:border-white/5 bg-[#f6f6f8] dark:bg-[#0A0A0F] z-20">
+                    <div className="flex h-full flex-col justify-between p-6">
+                        <div className="flex flex-col gap-8">
+                            {/* Brand */}
+                            <Link to="/feed" className="flex items-center gap-3 px-2">
+                                <div className="bg-[#2513ec] aspect-square rounded-xl size-10 flex items-center justify-center text-white">
+                                    <Monitor size={24} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <h1 className="text-slate-900 dark:text-white text-lg font-bold tracking-tight">EchoBoard</h1>
+                                    <p className="text-slate-500 dark:text-slate-400 text-xs">Global conversations</p>
+                                </div>
+                            </Link>
 
-            {/* Header */}
-            <header className={`fixed top-0 w-full z-50 border-b-4 border-primary px-6 py-4 lg:px-10 transition-colors ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <Link to="/feed" className="flex items-center gap-3 text-current hover:translate-x-1 transition-transform group">
-                            <div className="size-10 text-primary bg-white border-2 border-white flex items-center justify-center shadow-[4px_4px_0px_0px_#4f46e5] group-hover:shadow-[6px_6px_0px_0px_#4f46e5] transition-all">
-                                <ArrowLeft className="text-black" size={24} strokeWidth={3} />
+                            {/* Navigation */}
+                            <nav className="flex flex-col gap-2">
+                                <Link to="/feed" className="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group">
+                                    <Home className="text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec] transition-colors" size={24} />
+                                    <span className="text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec] transition-colors">Home</span>
+                                </Link>
+                                <a className="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
+                                    <TrendingUp className="text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec] transition-colors" size={24} />
+                                    <span className="text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec] transition-colors">Trending</span>
+                                </a>
+                                <a className="flex items-center gap-4 px-4 py-3 rounded-full bg-slate-200 dark:bg-[#1A1A24] border border-transparent dark:border-white/10 transition-colors" href="#">
+                                    <Users className="text-[#2513ec]" size={24} />
+                                    <span className="text-slate-900 dark:text-white font-semibold">Communities</span>
+                                </a>
+                                <a className="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
+                                    <Bell className="text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec] transition-colors" size={24} />
+                                    <span className="text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec] transition-colors">Notifications</span>
+                                    <span className="ml-auto bg-[#2513ec] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
+                                </a>
+                                <a className="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
+                                    <Bookmark className="text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec] transition-colors" size={24} />
+                                    <span className="text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec] transition-colors">Saved</span>
+                                </a>
+                            </nav>
+                        </div>
+
+                        {/* User Profile */}
+                        <div className="flex items-center gap-3 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 cursor-pointer transition-colors">
+                            <img alt="User profile" className="size-10 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBs2f0-h93LkenqAyWP9TBnwMqC_-YQX9bphMPKxXIzzKbZ4y1tE1BnTFipNWiBgDlCcAZ9priag1PLmMjfO_tH5xxBDd5Dy7RQWoxshouEZ4Ot6jUYjVG3x5RdHkahXFiIloG17a_hEofNhmxAonJFaQdPfRTNsszo3dZWqkJQ1xHJ5JnMY_ucOMHtV7IqZBUYqCGiakowZxE4mZncrO-3nDbvQ3RA_XXIrcOGFdwGvhIhXd_LukH7kPxLoFGloeae7-EcZQ-fyjbF" />
+                            <div className="flex flex-col">
+                                <span className="text-sm font-semibold text-slate-900 dark:text-white">Alex Morgan</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">@alex_writer</span>
                             </div>
-                            <h2 className={`text-2xl font-black uppercase tracking-tighter ${isDarkMode ? 'text-white' : 'text-black'}`}>EchoBoard</h2>
+                            <MoreHorizontal className="ml-auto text-slate-400" size={20} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content Area (Center + Right) */}
+                <div className="flex flex-1 lg:pl-72 justify-center">
+                    {/* Center Column: Post & Comments */}
+                    <main className="w-full max-w-[680px] py-6 px-4 flex flex-col gap-6">
+                        {/* Back Button Mobile Only */}
+                        <Link to="/feed" className="lg:hidden flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
+                            <ArrowLeft size={20} />
+                            <span className="font-medium">Back to Feed</span>
                         </Link>
 
-                        <div className={`hidden md:flex items-center h-12 px-4 w-72 border-2 border-primary shadow-neo-sm focus-within:shadow-neo transition-all ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
-                            <Search className="text-primary" size={24} strokeWidth={2.5} />
-                            <input
-                                className={`w-full bg-transparent border-none placeholder-slate-500 focus:ring-0 text-base font-bold ml-2 uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}
-                                placeholder="Search..."
-                            />
-                        </div>
-                    </div>
-
-                    <nav className="hidden md:flex items-center gap-8">
-                        <Link to="/feed" className={`text-base font-bold uppercase hover:text-primary hover:underline decoration-4 decoration-primary underline-offset-4 transition-all ${isDarkMode ? 'text-white' : 'text-slate-600'}`}>Home</Link>
-                        <a href="#" className="text-primary text-base font-bold uppercase border-b-4 border-primary">Discussions</a>
-                        <a href="#" className={`text-base font-bold uppercase hover:text-white transition-colors ${isDarkMode ? 'text-slate-400' : 'text-slate-400 hover:text-black'}`}>Trending</a>
-                        <a href="#" className={`text-base font-bold uppercase hover:text-white transition-colors ${isDarkMode ? 'text-slate-400' : 'text-slate-400 hover:text-black'}`}>Bookmarks</a>
-                    </nav>
-
-                    <div className="flex items-center gap-4">
-                        <button className="hidden sm:flex bg-primary hover:bg-primary-light active:translate-y-1 active:shadow-none transition-all text-white border-2 border-white h-10 px-6 shadow-[4px_4px_0px_0px_#ffffff] text-sm font-black uppercase tracking-wider items-center gap-2">
-                            <Plus size={18} strokeWidth={4} /> New Post
-                        </button>
-                        <button className={`flex items-center justify-center size-10 border-2 border-slate-700 hover:border-primary hover:text-primary transition-colors shadow-none hover:shadow-neo-sm ${isDarkMode ? 'bg-[#1e1e1e] text-white' : 'bg-white text-black'}`}>
-                            <Bell size={24} strokeWidth={2.5} />
-                        </button>
-                        <button className={`flex items-center justify-center size-10 border-2 border-slate-700 hover:border-primary hover:text-primary transition-colors shadow-none hover:shadow-neo-sm ${isDarkMode ? 'bg-[#1e1e1e] text-white' : 'bg-white text-black'}`}>
-                            <User size={24} strokeWidth={2.5} />
-                        </button>
-                    </div>
-                </div>
-            </header>
-
-            {/* Main Content */}
-            <main className="flex-1 w-full max-w-[1100px] mx-auto px-4 md:px-8 py-10 pt-32">
-                {/* Breadcrumbs */}
-                <div className="flex flex-wrap items-center gap-3 mb-8 text-sm font-mono font-bold uppercase tracking-tight">
-                    <a className={`px-2 py-1 border border-slate-700 hover:border-current transition-colors ${isDarkMode ? 'bg-[#1e1e1e] text-slate-400 hover:text-white' : 'bg-white text-slate-500 hover:text-black hover:border-black'}`} href="#">Discussions</a>
-                    <span className="text-primary">/</span>
-                    <a className={`px-2 py-1 border border-slate-700 hover:border-current transition-colors ${isDarkMode ? 'bg-[#1e1e1e] text-slate-400 hover:text-white' : 'bg-white text-slate-500 hover:text-black hover:border-black'}`} href="#">Technology</a>
-                    <span className="text-primary">/</span>
-                    <span className="bg-primary text-white px-2 py-1 border border-primary">Cross-Cultural</span>
-                </div>
-
-                {/* Title Section */}
-                <div className="mb-8">
-                    <h1 className={`text-4xl md:text-5xl font-black leading-none mb-6 tracking-tighter uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>The nuance of 'Kuidaore' in Osaka culture</h1>
-
-                    <div className="flex flex-wrap items-center justify-between gap-6">
-                        <div className={`flex items-center gap-4 p-2 pr-6 border-2 border-slate-700 shadow-[4px_4px_0px_0px_#334155] ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white shadow-[4px_4px_0px_0px_#cbd5e1]'}`}>
-                            <div className="size-12 bg-slate-700 bg-cover bg-center border-2 border-white" style={{ backgroundImage: `url('https://api.dicebear.com/7.x/notionists/svg?seed=Kenji&backgroundColor=e5e7eb')` }}></div>
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-3">
-                                    <span className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-black'}`}>Kenji Sato</span>
-                                    <span className="bg-primary text-white text-xs px-2 py-0.5 border border-white font-mono font-bold">JP</span>
+                        {/* Main Post Card */}
+                        <article className="relative flex flex-col bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
+                            {/* Post Header Image */}
+                            <div className="h-64 w-full bg-cover bg-center relative" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBdSvGBpopzO_kzDW0wg2OwqVeGV_X9yKPBXbHZa3_V1g71FdDTdHshfmLmWGWElI5dANcx-h6J9RUVVKvyGERFVORrsM73YAwbw_sRS4t4uVGoKM2vVePZ_-ynC1zW7quq_kevSaHYGO6OOxCZ5ibogIznZQnPPqhYf2R9IRtAmI46Sfb2E3wtBa8aVDiAqtSLWspiGbRYa-KaKIZdJ_dO30SvcCkXErYweVK3oSDGU4i_pmz93SSaQ33hbUsDE4jJea1ei5_zHmEq')" }}>
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A24]/90 via-transparent to-transparent"></div>
+                                {/* Floating Language Toggle */}
+                                <div className="absolute top-4 right-4 flex bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/10">
+                                    <button className="px-4 py-1.5 rounded-full bg-[#2513ec] text-white text-xs font-bold shadow-lg transition-transform hover:scale-105">
+                                        EN 🇺🇸
+                                    </button>
+                                    <button className="px-4 py-1.5 rounded-full text-white/70 hover:text-white text-xs font-medium transition-colors">
+                                        PT 🇧🇷
+                                    </button>
                                 </div>
-                                <span className="text-slate-400 text-xs font-mono uppercase">@kenji_sato • 2 hours ago</span>
-                            </div>
-                        </div>
-
-                        <label className={`flex items-center gap-4 cursor-pointer group p-2 border-2 border-primary shadow-neo hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
-                            <span className={`text-sm font-bold uppercase tracking-wider ml-2 ${isDarkMode ? 'text-white' : 'text-black'}`}>Reveal Original</span>
-                            <div className={`relative inline-flex h-8 w-14 items-center border-2 border-white transition-colors ${isDarkMode ? 'bg-black' : 'bg-gray-200'}`}>
-                                <span className="translate-x-6 inline-block h-6 w-6 transform bg-primary border-2 border-white transition shadow-sm"></span>
-                            </div>
-                            <span className="text-sm font-black text-primary uppercase mr-2">ON</span>
-                        </label>
-                    </div>
-                </div>
-
-                {/* Post Content Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border-4 border-primary bg-black shadow-neo-lg mb-8">
-                    {/* Original */}
-                    <div className="bg-[#0A0A0F] p-6 md:p-8 border-b-4 md:border-b-0 md:border-r-4 border-primary relative group">
-                        <div className="absolute top-0 right-0">
-                            <span className="bg-white text-black border-l-4 border-b-4 border-primary text-xs uppercase font-black px-3 py-1 tracking-wider inline-block">Original</span>
-                        </div>
-                        <div className="font-jp text-slate-300 leading-loose text-sm md:text-[15px] h-full overflow-y-auto max-h-[500px] pr-4 mt-6">
-                            <p className="mb-6">
-                                大阪の文化を語る上で、「食い倒れ」という言葉は外せません。多くの観光客はこれを単に「破産するまで食べる」という意味だと解釈していますが、実際のニュアンスはもっと深く、遊び心に満ちています。
-                            </p>
-                            <p className="mb-6">
-                                江戸時代、大阪は「天下の台所」と呼ばれていました。商人の町としての活気と、食材の豊富さが、この独特な食文化を育んだのです。
-                            </p>
-                            <p>
-                                京都の「着倒れ」（着物に全財産をつぎ込む）に対して、大阪人は食に情熱を注ぐ。それは単なる浪費ではなく、人生を謳歌する姿勢そのものなのです。
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Translated */}
-                    <div className={`p-6 md:p-8 relative ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-gray-50'}`}>
-                        <div className="absolute top-0 right-0">
-                            <span className="bg-primary text-white border-l-4 border-b-4 border-white text-xs uppercase font-black px-3 py-1 tracking-wider inline-block shadow-[-2px_2px_0px_0px_rgba(0,0,0,1)]">Translated</span>
-                        </div>
-                        <div className={`font-display leading-relaxed text-base md:text-lg h-full overflow-y-auto max-h-[500px] pr-4 mt-6 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                            <p className="mb-6">
-                                When discussing Osaka culture, the word <span className="bg-yellow-400/20 text-yellow-500 font-bold px-1 border-b-2 border-yellow-400 cursor-help hover:bg-yellow-400 hover:text-black transition-colors" title="Cultural Note: 'Kuidaore' literally means to eat until one falls over, symbolizing Osaka's obsession with food.">"Kuidaore"</span> is indispensable. Many tourists interpret this simply as "eating until you go bankrupt," but the actual nuance is deeper and full of playfulness.
-                            </p>
-                            <p className="mb-6">
-                                In the Edo period, Osaka was called "the nation's kitchen." The vitality of the merchant town and the abundance of ingredients nurtured this unique food culture.
-                            </p>
-                            <p>
-                                In contrast to Kyoto's <span className="bg-yellow-400/20 text-yellow-500 font-bold px-1 border-b-2 border-yellow-400 cursor-help hover:bg-yellow-400 hover:text-black transition-colors" title="Cultural Note: 'Kidaore' refers to Kyotoites spending their fortune on fine kimonos.">"Kidaore"</span> (spending one's entire fortune on kimono), Osakans pour their passion into food. It is not mere extravagance, but an attitude of celebrating life itself.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Interaction Bar */}
-                <div className={`flex items-center justify-between border-2 border-slate-700 p-2 mb-12 shadow-neo-sm ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
-                    <div className="flex items-center divide-x-2 divide-slate-700">
-                        <button className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-primary hover:bg-slate-800 transition-colors group">
-                            <Heart size={24} className="group-hover:scale-110 transition-transform" strokeWidth={2.5} />
-                            <span className="text-sm font-bold font-mono">1,240</span>
-                        </button>
-                        <button className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-primary hover:bg-slate-800 transition-colors group">
-                            <MessageSquare size={24} className="group-hover:scale-110 transition-transform" strokeWidth={2.5} />
-                            <span className="text-sm font-bold font-mono">48</span>
-                        </button>
-                        <button className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-primary hover:bg-slate-800 transition-colors group">
-                            <Repeat size={24} className="group-hover:scale-110 transition-transform" strokeWidth={2.5} />
-                            <span className="text-sm font-bold font-mono">124</span>
-                        </button>
-                    </div>
-                    <button className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border-l-2 border-slate-700">
-                        <Bookmark size={24} strokeWidth={2.5} />
-                    </button>
-                </div>
-
-                {/* Divider Pattern */}
-                <div className="h-1 w-full bg-slate-800 mb-12 relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMWgydjJIMUMxeiIgZmlsbD0iIzRmNDZlNSIgZmlsbC1ydWxlPSJldmVub2RkIi8+PC9zdmc+')` }}></div>
-                </div>
-
-                {/* Comment Input */}
-                <div className="flex gap-6 mb-16 items-start">
-                    <div className="size-12 border-2 border-primary bg-slate-700 bg-cover bg-center shrink-0 shadow-neo-sm" style={{ backgroundImage: `url('https://api.dicebear.com/7.x/notionists/svg?seed=User&backgroundColor=e5e7eb')` }}></div>
-                    <div className="flex-1">
-                        <div className="relative w-full group">
-                            <div className="absolute inset-0 bg-primary translate-x-2 translate-y-2 border-2 border-transparent"></div>
-                            <textarea
-                                className={`relative z-10 w-full border-2 border-white p-5 placeholder-slate-500 focus:ring-0 focus:border-primary min-h-[140px] resize-none text-lg font-medium shadow-none transition-all ${isDarkMode ? 'bg-[#1e1e1e] text-white' : 'bg-white text-black'}`}
-                                placeholder="Write your comment in 日本語..."
-                            ></textarea>
-                            <div className="absolute z-20 bottom-4 right-4 flex items-center gap-2 bg-black border border-slate-700 px-2 py-1">
-                                <span className="text-[10px] text-primary font-mono font-bold uppercase tracking-wide">Detected: JA</span>
-                            </div>
-                        </div>
-                        <div className="flex justify-between items-center mt-6 pl-2">
-                            <div className="flex gap-3">
-                                <button className="size-10 flex items-center justify-center text-slate-400 border-2 border-slate-700 hover:text-white hover:border-white hover:bg-slate-800 transition-colors">
-                                    <Bold size={20} />
-                                </button>
-                                <button className="size-10 flex items-center justify-center text-slate-400 border-2 border-slate-700 hover:text-white hover:border-white hover:bg-slate-800 transition-colors">
-                                    <Italic size={20} />
-                                </button>
-                                <button className="size-10 flex items-center justify-center text-slate-400 border-2 border-slate-700 hover:text-white hover:border-white hover:bg-slate-800 transition-colors">
-                                    <LinkIcon size={20} />
-                                </button>
-                            </div>
-                            <button className="bg-primary hover:bg-primary-light text-white px-8 py-2 border-2 border-white shadow-[4px_4px_0px_0px_#ffffff] font-black uppercase text-sm transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
-                                Post Comment
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Comments Section */}
-                <div className="space-y-10">
-                    <h3 className={`text-2xl font-black mb-8 border-l-8 border-primary pl-4 uppercase ${isDarkMode ? 'text-white' : 'text-black'}`}>Discussion <span className="text-slate-500 text-lg font-mono ml-3">/ 48</span></h3>
-
-                    {/* Comment 1 */}
-                    <div className="flex gap-0 group">
-                        <div className="flex flex-col items-center mr-4 w-10 shrink-0">
-                            <div className="size-10 border-2 border-white bg-slate-700 bg-cover bg-center shrink-0 z-10" style={{ backgroundImage: `url('https://api.dicebear.com/7.x/notionists/svg?seed=Sarah&backgroundColor=e5e7eb')` }}></div>
-                            <div className="w-1 bg-primary h-full -mt-2"></div>
-                        </div>
-                        <div className="flex-1 pb-8">
-                            <div className={`border-2 border-slate-700 p-5 shadow-[4px_4px_0px_0px_#000000] relative ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
-                                <div className={`absolute top-4 -left-2 w-4 h-4 border-l-2 border-b-2 border-slate-700 rotate-45 ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <span className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-black'}`}>Sarah Jenkins</span>
-                                        <span className="bg-slate-800 text-white border border-slate-600 text-[10px] px-2 py-0.5 font-mono font-bold shadow-[2px_2px_0px_0px_#475569]">EN</span>
-                                        <span className="text-slate-500 text-xs font-mono font-bold uppercase">• 1 hour ago</span>
+                                {/* Title Overlay */}
+                                <div className="absolute bottom-0 left-0 w-full p-6 pt-12">
+                                    <div className="flex items-center gap-3 mb-3 text-white/80 text-sm">
+                                        <span className="bg-white/10 px-2 py-0.5 rounded text-xs font-medium backdrop-blur-sm border border-white/10">Culture</span>
+                                        <span>•</span>
+                                        <span>5 min read</span>
                                     </div>
-                                    <div className={`text-base leading-relaxed mb-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                        This is fascinating! I visited Osaka last year and definitely felt that energy. Is there a similar term for Tokyo culture?
+                                    <h1 className="text-3xl font-bold text-white leading-tight mb-2 drop-shadow-sm">
+                                        Why remote work in São Paulo is changing coffee culture
+                                    </h1>
+                                </div>
+                            </div>
+
+                            {/* Post Meta & Body */}
+                            <div className="p-6 md:p-8 flex flex-col gap-6">
+                                {/* Author Line */}
+                                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-6">
+                                    <div className="flex items-center gap-3">
+                                        <img alt="Alex writer profile" className="size-10 rounded-full border border-slate-200 dark:border-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXYhKu7jiRx-l-YRcYC8tL-g7RwgLntTk-XtRCrEHA-QE5P7gs3nmCybSOp2Nuh2o-tzfb77qiKvoy9tUEV-2NBcea7XXiwR6jPGKm0lKKAso0RFfQDGDjDDiRl5rwyqyIIrv0NfT-9gNJO9c9bjyYKkYvFK1dlTQvQsamQGWJfgtlfyRNYx77mxLUXsUpcOgTuNZ6-RQb55TUsupMEiZnCyX78iv909oiJzZ8EkxR7AxRseTn1XwU3W8eyJbg8dUZADiZskP-i3r0" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-white hover:underline cursor-pointer">Alex Morgan</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Posted 2h ago in <span className="text-[#2513ec] hover:underline cursor-pointer">@BrazilTech</span></p>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-4 border-t-2 border-slate-800 pt-3">
-                                        <button className="text-slate-400 hover:text-primary text-xs font-bold uppercase flex items-center gap-1 group/btn">
-                                            <Heart size={18} className="group-hover:scale-110 transition-transform" /> 12
+                                    <button className="flex items-center gap-2 text-[#2513ec] hover:text-[#2513ec]/80 font-medium text-sm transition-colors">
+                                        <Plus size={20} />
+                                        Follow
+                                    </button>
+                                </div>
+
+                                {/* Article Text */}
+                                <div className="prose prose-slate dark:prose-invert max-w-none">
+                                    <p className="text-lg leading-[1.8] text-slate-600 dark:text-slate-300 font-normal">
+                                        The traditional <em className="text-slate-900 dark:text-white font-medium">'cafezinho'</em> is being reimagined as digital nomads flood the city's historic center. What used to be a quick stand-up espresso is evolving into hour-long laptop sessions, challenging local etiquette and sparking a new wave of hybrid spaces.
+                                    </p>
+                                    <p className="text-lg leading-[1.8] text-slate-600 dark:text-slate-300 font-normal mt-4">
+                                        Shop owners in Vila Madalena are adapting fast. "We used to have no outlets," explains Marco, a third-generation barista. "Now, they are more important than the beans." This shift represents more than just infrastructure; it's a fundamental change in how Paulistanos interact with their public spaces.
+                                    </p>
+                                </div>
+
+                                {/* Reveal Original Button */}
+                                <div className="flex justify-center py-2">
+                                    <button
+                                        onClick={() => setShowOriginal(!showOriginal)}
+                                        className={`group flex items-center gap-2 px-5 py-2.5 rounded-full border transition-all ${showOriginal ? 'bg-[#2513ec] border-[#2513ec] text-white' : 'border-slate-200 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400'}`}
+                                    >
+                                        <Monitor className={`text-[20px] transition-colors ${showOriginal ? 'text-white' : 'text-slate-400 group-hover:text-[#2513ec]'}`} />
+                                        <span className={`text-sm font-bold transition-colors ${showOriginal ? 'text-white' : 'group-hover:text-[#2513ec]'}`}>Reveal Original Language (Portuguese)</span>
+                                    </button>
+                                </div>
+
+                                {showOriginal && (
+                                    <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg font-mono text-sm text-slate-700 dark:text-slate-300 mt-2">
+                                        <p>O tradicional 'cafezinho' está sendo reinventado à medida que nômades digitais inundam o centro histórico da cidade...</p>
+                                    </div>
+                                )}
+
+
+                                {/* Cultural Context Panel */}
+                                <div className="relative overflow-hidden rounded-lg bg-slate-50 dark:bg-[#121118] border border-[#D4AF37]/40 p-5 mt-2">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-[#D4AF37]"></div>
+                                    <div className="flex flex-col gap-2 relative z-10 pl-2">
+                                        <div className="flex items-center gap-2 text-[#D4AF37] mb-1">
+                                            <Lightbulb size={20} />
+                                            <span className="text-xs font-bold tracking-widest uppercase">Cultural Context</span>
+                                        </div>
+                                        <h3 className="text-slate-900 dark:text-white font-bold text-lg">The Cafezinho Ritual</h3>
+                                        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                                            The 'cafezinho' is a ritual of hospitality in Brazil, typically a small, strong coffee offered for free in offices and shops to welcome guests. It is traditionally consumed quickly while standing, emphasizing social lubrication over consumption.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Bar */}
+                            <div className="bg-slate-50 dark:bg-[#12101a] border-t border-slate-200 dark:border-white/5 px-6 py-4 flex items-center justify-between">
+                                <div className="flex items-center gap-6">
+                                    <button className="flex items-center gap-2 group">
+                                        <Heart className="text-slate-400 group-hover:text-[#2513ec] transition-colors" size={20} />
+                                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-[#2513ec]">1.2k</span>
+                                    </button>
+                                    <button className="flex items-center gap-2 group">
+                                        <MessageCircle className="text-slate-400 group-hover:text-blue-400 transition-colors" size={20} />
+                                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-blue-400">45</span>
+                                    </button>
+                                    <button className="flex items-center gap-2 group">
+                                        <Share className="text-slate-400 group-hover:text-green-400 transition-colors" size={20} />
+                                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-green-400">Share</span>
+                                    </button>
+                                </div>
+                                <button className="text-slate-400 hover:text-white transition-colors">
+                                    <Bookmark size={20} />
+                                </button>
+                            </div>
+                        </article>
+
+                        {/* Comment Section Composer */}
+                        <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-6 shadow-sm">
+                            <div className="flex gap-4">
+                                <img alt="Your avatar" className="size-10 rounded-full border border-slate-200 dark:border-white/10 shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkTJAaxfPZTf9b-2Djl3Z13CrmE3xdOcLqPx2N8igo75Z7r3S5bTzoA3YJMVEfrlycRKw5-7rJChAi3MNeX9cRIxpxQsR3UkRLjE2p32DNV7rcG_hguaG2eO_ya6XfvrHtK8WPX_aATCAxiV_lal5CK57l1PI0VGzMdAlSNHFwO-ZNrGdfxrPkExiMvFNHbZN6W6vzZN0ZXaWz1uOLlaFCI_cQ4ArpMCyX-Pw8_SvvXmOYGnq-eBMP1Z6vEXQExdbbH0-bRH6u8QHw" />
+                                <div className="flex-1 flex flex-col gap-3">
+                                    <div className="relative">
+                                        <textarea className="w-full bg-slate-50 dark:bg-[#0A0A0F] border border-slate-200 dark:border-white/10 rounded-lg p-4 min-h-[100px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#2513ec] focus:border-transparent resize-y text-sm leading-relaxed" placeholder="Share your perspective..."></textarea>
+                                        <div className="absolute bottom-3 right-3">
+                                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-200 dark:bg-white/10 text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                                Writing in English
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex gap-2">
+                                            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors">
+                                                <Bold size={20} />
+                                            </button>
+                                            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors">
+                                                <Italic size={20} />
+                                            </button>
+                                            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors">
+                                                <LinkIcon size={20} />
+                                            </button>
+                                        </div>
+                                        <button className="bg-[#2513ec] hover:bg-[#2513ec]/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-[#2513ec]/25">
+                                            Post Comment
                                         </button>
-                                        <button className={`text-slate-400 text-xs font-bold uppercase ${isDarkMode ? 'hover:text-white' : 'hover:text-black'}`}>Reply</button>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Reply */}
-                            <div className="mt-6 flex gap-0">
-                                <div className="flex flex-col items-center mr-4 w-10 shrink-0">
-                                    <div className="absolute -ml-[3.5rem] mt-5 w-8 h-1 bg-primary"></div>
-                                    <div className="size-10 border-2 border-primary bg-slate-700 bg-cover bg-center shrink-0 z-10" style={{ backgroundImage: `url('https://api.dicebear.com/7.x/notionists/svg?seed=Kenji&backgroundColor=e5e7eb')` }}></div>
+                        {/* Discussion Thread */}
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-between px-2">
+                                <h3 className="text-slate-900 dark:text-white font-bold text-lg">45 Comments</h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-slate-500 dark:text-slate-400">Sort by:</span>
+                                    <button className="flex items-center gap-1 text-sm font-semibold text-slate-900 dark:text-white hover:text-[#2513ec] transition-colors">
+                                        Top Rated
+                                    </button>
                                 </div>
-                                <div className="flex-1">
-                                    <div className={`border-2 border-primary p-5 shadow-neo relative ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
-                                        <div className={`absolute top-4 -left-2 w-4 h-4 border-l-2 border-b-2 border-primary rotate-45 ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}></div>
-                                        <div className="relative z-10">
-                                            <div className="flex flex-wrap items-center gap-3 mb-3">
-                                                <span className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-black'}`}>Kenji Sato</span>
-                                                <span className="bg-primary text-white border border-white text-[10px] px-2 py-0.5 font-mono font-bold shadow-[2px_2px_0px_0px_#ffffff]">JP</span>
-                                                <span className="bg-yellow-400 text-black border border-black text-[10px] px-2 py-0.5 font-bold uppercase tracking-wide flex items-center gap-1 shadow-[2px_2px_0px_0px_#000000]">
-                                                    <Lightbulb size={14} fill="currentColor" /> Author
-                                                </span>
-                                                <span className="text-slate-500 text-xs font-mono font-bold uppercase">• 45 min ago</span>
-                                            </div>
-                                            <div className={`text-base leading-relaxed mb-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                                Tokyo doesn't really have a direct equivalent phrase, but there is an old saying <span className="bg-slate-800 px-1 font-mono text-sm text-primary-light">"Edokko wa yoigoshi no zeni wa motanai"</span>. It implies a similar dashing spirit!
-                                            </div>
-                                            <div className="bg-black border-2 border-yellow-400 p-4 my-4 flex gap-4 items-start shadow-[4px_4px_0px_0px_#fbbf24]">
-                                                <div className="bg-yellow-400 text-black p-1 shrink-0 border border-black">
-                                                    <GraduationCap size={20} />
-                                                </div>
-                                                <div>
-                                                    <p className="text-yellow-400 text-xs font-black uppercase tracking-wider mb-1">Cultural Context</p>
-                                                    <p className="text-slate-300 text-sm font-medium">"Edokko" refers to people born and raised in Edo (modern-day Tokyo) going back several generations. They prided themselves on being stylish, quick-tempered, and generous.</p>
+                            </div>
+
+                            {/* Comment 1 */}
+                            <div className="flex flex-col gap-3">
+                                <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-5 shadow-sm">
+                                    <div className="flex gap-4">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <img alt="Kenji profile" className="size-10 rounded-full border border-slate-200 dark:border-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGvGiETCr7meP9ByepFDocj7IjNtz-QG7ScKJPSHI4CZPbnGD2dX3iX0Bnj-3F4o3g--ic0KPzQ687QsMRXG4PnKxigUdBO_ycQ2rRJS57VGFgiWFhZBWNRgQ63_ppKnHhIqRamXVoTohXaz3AlN_P_W6OxAM8qyYFwFZa6u0QkEp5LRYar1Zl0-RDTU3ulpfObGu73gjDwoeV-K3QSJ36VKCBSKvkCc54O-ItcJM_CBag3qMrpmFjvauDuwoMqVc2SR4L4-jc5jxs" />
+                                            <div className="h-full w-px bg-slate-200 dark:bg-white/10 my-2"></div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-bold text-slate-900 dark:text-white">Kenji M.</span>
+                                                    <span className="text-xs bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/5">🇯🇵 JP</span>
+                                                    <span className="text-xs text-slate-400">• 1h ago</span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-4 border-t-2 border-slate-800 pt-3">
-                                                <button className="text-slate-400 hover:text-primary text-xs font-bold uppercase flex items-center gap-1 group/btn">
-                                                    <Heart size={18} className="group-hover:scale-110 transition-transform" /> 8
-                                                </button>
-                                                <button className={`text-slate-400 text-xs font-bold uppercase ${isDarkMode ? 'hover:text-white' : 'hover:text-black'}`}>Reply</button>
+                                            <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-3">
+                                                In Tokyo, we see a similar trend with 'kissaten'. They used to be quiet places for contemplation, but remote work is turning them into co-working hubs. Interesting to see the parallels in Brazil.
+                                            </p>
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#0A0A0F] rounded-full px-2 py-1 border border-slate-200 dark:border-white/5">
+                                                    <button className="p-1 hover:text-[#2513ec] text-slate-400 transition-colors">
+                                                        <Heart size={18} />
+                                                    </button>
+                                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">248</span>
+                                                </div>
+                                                <button className="text-xs font-bold text-slate-500 hover:text-[#2513ec] transition-colors">Reply</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Nested Reply */}
+                                <div className="pl-12">
+                                    <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-5 shadow-sm relative">
+                                        <div className="absolute left-[-24px] top-8 w-6 h-[2px] bg-slate-200 dark:border-white/10"></div>
+                                        <div className="absolute left-[-24px] top-[-30px] w-[2px] h-[60px] bg-slate-200 dark:border-white/10 rounded-bl-lg"></div>
+                                        <div className="flex gap-4">
+                                            <img alt="Thomas profile" className="size-10 rounded-full border border-slate-200 dark:border-white/10 shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVL5pEGmKW3Vu69sgFORp4fwAHgJwymk2CW-2lZWZPXDcvFpLkouFd4iD4zkJ6cQhqpdjA7pkad6ZnZukCQBvyJ0165TNY6SH5NW2ejBeTHCoFgWylCxbAATdMHUpJGfar6ekLa8bm_9FOqAk8BfPWDA1aZzqf7cip4fFuU6_ZGhgQcOXP2NoP-T_tWEgQI2BOMEFO8lU9d8VgOWspAdFHckQitF75PDRq-F3pAOjnEaLLy52rso0FTogEqTtfaNwZnYJ0VZCT7wtv" />
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-bold text-slate-900 dark:text-white">Thomas B.</span>
+                                                        <span className="text-xs bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/5">🇩🇪 DE</span>
+                                                        <span className="text-xs text-slate-400">• 45m ago</span>
+                                                    </div>
+                                                </div>
+                                                <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-3">
+                                                    The noise level is the biggest issue here in Berlin. Are the cafes in SP implementing soundproofing?
+                                                </p>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#0A0A0F] rounded-full px-2 py-1 border border-slate-200 dark:border-white/5">
+                                                        <button className="p-1 hover:text-[#2513ec] text-slate-400 transition-colors">
+                                                            <Heart size={18} />
+                                                        </button>
+                                                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400">42</span>
+                                                    </div>
+                                                    <button className="text-xs font-bold text-slate-500 hover:text-[#2513ec] transition-colors">Reply</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </main>
+
+                    {/* Right Column: Related (Desktop only) */}
+                    <aside className="hidden xl:flex w-80 flex-col py-6 pr-6 gap-6 sticky top-0 h-screen overflow-y-auto">
+                        {/* Related Communities Card */}
+                        <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-5 shadow-sm">
+                            <h3 className="text-slate-900 dark:text-white font-bold text-base mb-4">Related Communities</h3>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-10 rounded-lg bg-emerald-900/30 flex items-center justify-center text-emerald-500 border border-emerald-500/20">
+                                            <Coffee size={24} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-slate-900 dark:text-white">Coffee Lovers</span>
+                                            <span className="text-xs text-slate-500">240k members</span>
+                                        </div>
+                                    </div>
+                                    <button className="bg-slate-100 dark:bg-white/5 hover:bg-[#2513ec] hover:text-white text-slate-900 dark:text-white p-2 rounded-full transition-colors">
+                                        <Plus size={18} />
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="size-10 rounded-lg bg-indigo-900/30 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
+                                            <Monitor size={24} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-slate-900 dark:text-white">Digital Nomads</span>
+                                            <span className="text-xs text-slate-500">1.2m members</span>
+                                        </div>
+                                    </div>
+                                    <button className="bg-slate-100 dark:bg-white/5 hover:bg-[#2513ec] hover:text-white text-slate-900 dark:text-white p-2 rounded-full transition-colors">
+                                        <Plus size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                            <button className="w-full mt-4 py-2 text-xs font-bold text-[#2513ec] hover:underline">See All</button>
+                        </div>
+                    </aside>
                 </div>
-            </main>
+            </div>
         </div>
     );
 };
