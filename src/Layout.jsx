@@ -32,7 +32,7 @@ const Layout = () => {
     const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-[#0A0A0F] text-[#F0F0FF]' : 'bg-[#F5F5F0] text-[#0A0A0F]'} font-sans selection:bg-black selection:text-white`}>
+        <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-[#111118] text-[#F0F0FF]' : 'bg-[#F5F5F0] text-[#0A0A0F]'} font-sans selection:bg-black selection:text-white`}>
 
             {/* Navbar */}
             <header className={`fixed top-0 w-full z-50 transition-all duration-300 border-b-2 ${isDarkMode ? 'bg-[#111118]/90 border-[#2A2A3A] backdrop-blur-md' : 'bg-white/90 border-black/5 backdrop-blur-md'}`}>
@@ -48,15 +48,15 @@ const Layout = () => {
 
                         {/* Desktop Nav */}
                         <nav className="hidden md:flex items-center gap-8">
-                            <Link to="/" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 transition-all ${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}>
+                            <Link to="/features" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 transition-all ${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}>
                                 Features
                             </Link>
                             <Link to="/about" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 transition-all ${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}>
                                 About
                             </Link>
-                            <a href="#" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 transition-all ${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}>
+                            <Link to="/pricing" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 transition-all ${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}>
                                 Pricing
-                            </a>
+                            </Link>
                         </nav>
 
                         {/* Right Actions */}

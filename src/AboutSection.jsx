@@ -22,21 +22,21 @@ const AboutSection = () => {
 
                     {/* Left Content */}
                     <div className="flex flex-col gap-6">
-                        <div className="inline-flex w-fit items-center gap-2 rounded-lg border-2 border-black bg-accent-yellow px-3 py-1 text-xs font-bold uppercase shadow-brutalist dark:border-white dark:bg-yellow-500 dark:text-black">
+                        <div className="inline-flex w-fit items-center gap-2 rounded-lg border-2 border-black bg-accent-yellow px-3 py-1 text-xs font-bold uppercase shadow-brutalist dark:border-white dark:bg-yellow-500 text-[#0A0A0F] dark:text-[#0A0A0F]">
                             <Sparkles size={14} />
                             v2.0 Now Live
                         </div>
-                        <h2 className="text-5xl font-black leading-[0.9] tracking-tighter text-black dark:text-white md:text-7xl lg:text-8xl">
+                        <h2 className="text-5xl font-black leading-[0.9] tracking-tighter text-white text-stroke-1 dark:text-white dark:text-stroke-0 md:text-7xl lg:text-8xl">
                             SPEAK <br />
-                            <span className="text-primary dark:text-primary-dark text-stroke-1">GLOBALLY.</span> <br />
+                            <span className="text-black dark:text-primary-dark text-stroke-1">GLOBALLY.</span> <br />
                             READ <br />
-                            <span className="text-primary dark:text-primary-dark text-stroke-1">LOCALLY.</span>
+                            <span className="text-black dark:text-primary-dark text-stroke-1">LOCALLY.</span>
                         </h2>
-                        <p className="max-w-md text-lg font-medium leading-relaxed text-slate-700 dark:text-slate-300 border-l-4 border-black dark:border-white pl-4">
+                        <p className="max-w-md text-lg font-medium leading-relaxed text-gray-700 dark:text-slate-300 border-l-4 border-black dark:border-white pl-4">
                             Break down language barriers without breaking your flow. EchoBoard handles the translation so you can handle the connection.
                         </p>
                         <div className="flex flex-wrap gap-4 pt-4">
-                            <button className="flex h-14 min-w-[160px] items-center justify-center rounded-lg border-2 border-black bg-primary px-8 text-lg font-bold text-white shadow-brutalist-thick transition-all hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-brutalist active:translate-x-[8px] active:translate-y-[8px] active:shadow-none dark:border-white">
+                            <button className="flex h-14 min-w-[160px] items-center justify-center rounded-lg border-2 bg-primary px-8 text-lg font-bold shadow-brutalist-thick transition-all hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-brutalist active:translate-x-[8px] active:translate-y-[8px] active:shadow-none border-[#0A0A0F] text-[#0A0A0F] dark:border-white dark:text-white">
                                 START NOW
                             </button>
                             <button className="flex h-14 min-w-[160px] items-center justify-center rounded-lg border-2 border-black bg-white px-8 text-lg font-bold text-black shadow-brutalist-thick transition-all hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-brutalist active:translate-x-[8px] active:translate-y-[8px] active:shadow-none dark:bg-[#1A1A24] dark:border-white dark:text-white">
@@ -82,21 +82,43 @@ const AboutSection = () => {
             </section>
 
             {/* Divider Ticker */}
+            <style>
+                {`
+                @keyframes marquee {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+                .animate-marquee {
+                    animation: marquee 20s linear infinite;
+                }
+                .animate-marquee:hover {
+                    animation-play-state: paused;
+                }
+                `}
+            </style>
             <div className="w-full border-y-4 border-black bg-accent-yellow py-3 overflow-hidden dark:bg-yellow-500 dark:border-white">
-                <div className="flex w-full items-center justify-center gap-8 whitespace-nowrap text-xl font-bold uppercase tracking-widest text-black">
-                    <span className="flex items-center gap-2">✦ Zero Latency</span>
-                    <span className="flex items-center gap-2">✦ 100+ Languages</span>
-                    <span className="flex items-center gap-2">✦ Context Aware</span>
-                    <span className="hidden md:flex items-center gap-2">✦ Zero Latency</span>
-                    <span className="hidden md:flex items-center gap-2">✦ 100+ Languages</span>
-                    <span className="hidden md:flex items-center gap-2">✦ Context Aware</span>
+                <div className="flex w-fit animate-marquee whitespace-nowrap text-xl font-bold uppercase tracking-widest text-[#0A0A0F]">
+                    <span className="mx-8 md:mx-12">✦ Zero Latency</span>
+                    <span className="mx-8 md:mx-12">✦ 100+ Languages</span>
+                    <span className="mx-8 md:mx-12">✦ Context Aware</span>
+                    <span className="mx-8 md:mx-12">✦ Zero Latency</span>
+                    <span className="mx-8 md:mx-12">✦ 100+ Languages</span>
+                    <span className="mx-8 md:mx-12">✦ Context Aware</span>
+
+                    {/* Duplicate for seamless loop */}
+                    <span className="mx-8 md:mx-12">✦ Zero Latency</span>
+                    <span className="mx-8 md:mx-12">✦ 100+ Languages</span>
+                    <span className="mx-8 md:mx-12">✦ Context Aware</span>
+                    <span className="mx-8 md:mx-12">✦ Zero Latency</span>
+                    <span className="mx-8 md:mx-12">✦ 100+ Languages</span>
+                    <span className="mx-8 md:mx-12">✦ Context Aware</span>
                 </div>
             </div>
 
             {/* Core Capabilities Grid */}
             <section className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
                 <div className="mb-16 text-center">
-                    <h2 className="inline-block border-b-8 border-accent-yellow text-4xl font-black uppercase text-black md:text-6xl dark:text-white dark:border-yellow-500">
+                    <h2 className="inline-block border-b-8 border-accent-yellow text-4xl font-black uppercase text-white text-stroke-1 md:text-6xl dark:text-white dark:text-stroke-0 dark:border-yellow-500">
                         Core Capabilities
                     </h2>
                 </div>
@@ -171,7 +193,7 @@ const AboutSection = () => {
             </section>
 
             {/* Interactive Demo Section */}
-            <section className="w-full border-y-4 border-black bg-white py-20 dark:bg-[#0A0A0F] dark:border-white">
+            <section className="w-full border-y-4 border-black bg-white py-20 dark:bg-[#111118] dark:border-white">
                 <div className="mx-auto max-w-5xl px-4 sm:px-6">
                     <div className="flex flex-col gap-10 md:flex-row md:items-center">
                         <div className="flex-1">
@@ -213,14 +235,14 @@ const AboutSection = () => {
                                     <div className="h-1 w-full border-t-2 border-dashed border-black dark:border-white"></div>
                                 </div>
                                 <div className="flex flex-col gap-4">
-                                    <div className="relative flex items-center justify-between rounded-xl border-2 border-black bg-slate-900 p-4 text-white shadow-sm dark:border-white dark:bg-black">
+                                    <div className="relative flex items-center justify-between rounded-xl border-2 border-black bg-slate-900 p-4 text-white shadow-sm dark:border-white dark:bg-[#1A1A24]">
                                         <div>
                                             <p className="text-xs font-bold uppercase text-slate-400 mb-1">Output (Japanese)</p>
                                             <p className="text-lg font-medium">こんにちは、何かクールなものを作りましょう。</p>
                                         </div>
                                         <Copy size={20} className="text-slate-500 cursor-pointer hover:text-white" />
                                     </div>
-                                    <div className="relative flex items-center justify-between rounded-xl border-2 border-black bg-slate-900 p-4 text-white shadow-sm dark:border-white dark:bg-black">
+                                    <div className="relative flex items-center justify-between rounded-xl border-2 border-black bg-slate-900 p-4 text-white shadow-sm dark:border-white dark:bg-[#1A1A24]">
                                         <div>
                                             <p className="text-xs font-bold uppercase text-slate-400 mb-1">Output (Spanish)</p>
                                             <p className="text-lg font-medium">Hola amigo, construyamos algo genial.</p>
@@ -242,10 +264,10 @@ const AboutSection = () => {
                     <div className="absolute -bottom-10 -right-10 h-32 w-32 rotate-45 border-4 border-black bg-white dark:border-white"></div>
 
                     <div className="relative z-10 flex flex-col items-center gap-8">
-                        <h2 className="text-4xl font-black uppercase text-white md:text-6xl drop-shadow-md">
+                        <h2 className="text-4xl font-black uppercase text-white text-stroke-1 md:text-6xl drop-shadow-md dark:text-white dark:text-stroke-0">
                             Ready to go Global?
                         </h2>
-                        <p className="max-w-xl text-lg font-medium text-white/90">
+                        <p className="max-w-xl text-lg font-medium text-white dark:text-white/90">
                             Join 50,000+ users breaking language barriers today. No credit card required for the beta.
                         </p>
                         <button className="flex h-16 w-full max-w-xs items-center justify-center gap-2 rounded-lg border-2 border-black bg-white text-xl font-bold text-black shadow-brutalist transition-transform hover:-translate-y-1 hover:bg-accent-yellow dark:border-white dark:hover:bg-yellow-500">
