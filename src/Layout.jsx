@@ -64,9 +64,10 @@ const Layout = () => {
                             <button onClick={toggleTheme} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-white/10 text-yellow-300' : 'hover:bg-black/5 text-slate-600'}`}>
                                 {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                             </button>
-                            <button className={`hidden sm:flex text-sm font-bold transition-colors ${isDarkMode ? 'text-slate-200 hover:text-white' : 'text-slate-800 hover:text-black'}`}>
-                                Sign In
-                            </button>
+                            {/* Login Button */}
+                            <Link to="/login" className={`hidden md:flex h-10 items-center justify-center rounded-lg border-2 border-black bg-white px-6 text-sm font-bold text-black shadow-brutalist hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all active:bg-gray-50 dark:bg-[#1A1A24] dark:text-white dark:border-white`}>
+                                Login
+                            </Link>
                             <button className={`hidden sm:flex h-10 items-center justify-center rounded-lg border-2 px-6 text-sm font-bold shadow-brutalist hover:shadow-brutalist-hover hover:translate-x-[2px] hover:translate-y-[2px] transition-all ${isDarkMode ? 'bg-[#6C63FF] border-white text-white' : 'bg-[#4F46E5] border-black text-white'}`}>
                                 Join Free
                             </button>

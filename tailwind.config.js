@@ -19,6 +19,8 @@ export default {
       fontFamily: {
         "display": ["Inter", "sans-serif"],
         "body": ["Inter", "sans-serif"],
+        "mono": ["JetBrains Mono", "monospace"],
+        "jp": ["Noto Sans JP", "sans-serif"],
       },
       borderRadius: {
         "lg": "1rem",
@@ -27,6 +29,7 @@ export default {
       },
       boxShadow: {
         'brutalist': '4px 4px 0px 0px #000000',
+        'brutalist-sm': '2px 2px 0px 0px #000000',
         'brutalist-hover': '2px 2px 0px 0px #000000',
         'brutalist-thick': '8px 8px 0px 0px #000000',
         'brutalist-thick-hover': '4px 4px 0px 0px #000000',
