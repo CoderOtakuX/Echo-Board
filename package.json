@@ -15,7 +15,6 @@
     "@tailwindcss/postcss": "^4.2.0",
     "i18next": "^25.8.13",
     "i18next-browser-languagedetector": "^8.2.1",
-    "lingo.dev": "^0.131.7",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
