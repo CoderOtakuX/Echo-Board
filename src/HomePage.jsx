@@ -2,6 +2,7 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Globe, Lightbulb, Zap, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const HomePage = () => {
     // Access global state from Layout if needed, though for now we drift props
@@ -16,6 +17,7 @@ const HomePage = () => {
     // we can use the context.
 
     const { isDarkMode } = useOutletContext();
+    const { t } = useTranslation();
 
     return (
         <div className="flex flex-col items-center justify-center w-full">
@@ -58,23 +60,23 @@ const HomePage = () => {
 
                 <div className="max-w-4xl mx-auto space-y-4 mb-8">
                     <h1 className="text-4xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight leading-[1] drop-shadow-sm">
-                        <span className={isDarkMode ? 'text-white' : 'text-black'}>Every voice.</span> <br />
-                        <span className={`bg-gradient-to-r bg-clip-text text-transparent ${isDarkMode ? 'from-[#6C63FF] to-[#8075FF]' : 'from-[#4F46E5] to-[#3b82f6]'}`}>Every language.</span> <br />
-                        <span className={isDarkMode ? 'text-white' : 'text-black'}>One conversation.</span>
+                        <span className={isDarkMode ? 'text-white' : 'text-black'}>{t('heroVoice')}</span> <br />
+                        <span className={`bg-gradient-to-r bg-clip-text text-transparent ${isDarkMode ? 'from-[#6C63FF] to-[#8075FF]' : 'from-[#4F46E5] to-[#3b82f6]'}`}>{t('heroLanguage')}</span> <br />
+                        <span className={isDarkMode ? 'text-white' : 'text-black'}>{t('heroConversation')}</span>
                     </h1>
                 </div>
 
                 <p className={`max-w-2xl mx-auto text-lg sm:text-xl font-medium leading-relaxed mb-12 ${isDarkMode ? 'text-[#8888AA]' : 'text-slate-600'}`}>
-                    Write in your native tongue. The world reads in theirs. Experience the first social platform with invisible, real-time translation and deep cultural context.
+                    {t('heroDescription')}
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6 mb-16 w-full sm:w-auto">
                     <button className={`relative w-full sm:w-auto h-16 px-10 rounded-full text-lg font-black border-2 shadow-brutalist-thick hover:shadow-brutalist-thick-hover hover:translate-x-[4px] hover:translate-y-[4px] transition-all duration-200 flex items-center justify-center gap-2 group ${isDarkMode ? 'bg-[#6C63FF] border-white text-white' : 'bg-[#4F46E5] border-black text-white'}`}>
-                        Start Talking
+                        {t('startTalking')}
                         <ArrowRight className="group-hover:translate-x-1 transition-transform" />
                     </button>
                     <button className={`w-full sm:w-auto h-16 px-8 rounded-full text-lg font-bold border-2 shadow-brutalist hover:shadow-brutalist-hover hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200 flex items-center justify-center ${isDarkMode ? 'bg-[#1A1A24] border-[#2A2A3A] text-white' : 'bg-white border-black text-black'}`}>
-                        See How It Works
+                        {t('seeHowItWorks')}
                     </button>
                 </div>
 

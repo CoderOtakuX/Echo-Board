@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 import {
     Hexagon, CheckCircle, ArrowRight, Circle,
     Cpu, BookOpen, Globe, Clapperboard,
@@ -9,7 +10,9 @@ import {
 
 const InterestSetup = () => {
     const navigate = useNavigate();
+    const { user } = useUser();
     const [selectedInterests, setSelectedInterests] = useState(['tech', 'phil', 'news']);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const interests = [
         { id: 'tech', name: 'Technology', icon: Cpu, activeLang: 12, global: true },
@@ -26,6 +29,26 @@ const InterestSetup = () => {
         setSelectedInterests(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
+    };
+
+    const handleFinish = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            // Update metadata to mark onboarding as complete
+            // We use unsafeMetadata since publicMetadata can only be updated from the backend
+            await user.update({
+                unsafeMetadata: {
+                    ...user.unsafeMetadata,
+                    onboardingComplete: true,
+                    interests: selectedInterests
+                }
+            });
+            navigate('/feed');
+        } catch (error) {
+            console.error("Failed to update metadata:", error);
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -135,10 +158,11 @@ const InterestSetup = () => {
                     </div>
                     <div className="w-full md:w-auto">
                         <button
-                            onClick={() => navigate('/feed')}
-                            className="w-full md:w-auto flex items-center justify-center gap-3 bg-primary hover:bg-primary-dark text-white font-bold text-lg px-8 py-4 border-2 border-primary shadow-brutalist hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all uppercase tracking-wide dark:bg-primary-light dark:border-primary-light dark:hover:bg-primary dark:text-black"
+                            onClick={handleFinish}
+                            disabled={isSubmitting}
+                            className="w-full md:w-auto flex items-center justify-center gap-3 bg-primary hover:bg-primary-dark text-white font-bold text-lg px-8 py-4 border-2 border-primary shadow-brutalist hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all uppercase tracking-wide dark:bg-primary-light dark:border-primary-light dark:hover:bg-primary dark:text-black disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Finish Setup
+                            {isSubmitting ? 'Saving...' : 'Finish Setup'}
                             <ArrowRight size={24} strokeWidth={3} />
                         </button>
                     </div>

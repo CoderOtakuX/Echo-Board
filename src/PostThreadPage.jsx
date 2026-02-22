@@ -1,309 +1,635 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Home, TrendingUp, Users, Bookmark, Bell, MoreHorizontal,
     ArrowLeft, Share, MessageCircle, Heart, Lightbulb,
-    Bold, Italic, Link as LinkIcon, Coffee, Monitor, Plus
+    Bold, Italic, Link as LinkIcon, Coffee, Monitor, Plus, Globe, X, Settings
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
+import { supabase } from './lib/supabase';
+import { useTranslationEngine } from './hooks/useTranslationEngine';
 
 const PostThreadPage = () => {
-    // State to simulate "Reveal Original" toggle
+    const { t, i18n } = useTranslation();
+    const { id } = useParams();
+    const { user } = useUser();
     const [showOriginal, setShowOriginal] = useState(false);
+    const [post, setPost] = useState(null);
+    const [comments, setComments] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [isTranslating, setIsTranslating] = useState(false);
+    const [hasTranslated, setHasTranslated] = useState(false);
+    const [translatedTitle, setTranslatedTitle] = useState('');
+    const [translatedBody, setTranslatedBody] = useState('');
+
+    const { translate, isTranslating: engineTranslating } = useTranslationEngine();
+    const currentLangCode = i18n.language.split('-')[0].toLowerCase();
+
+    console.log('[PostThreadPage] Render:', { id, post: !!post, commentsCount: comments.length, isLoading });
+
+    useEffect(() => {
+        const fetchTranslation = async () => {
+            if (post && post.locale && post.locale !== currentLangCode && !post.title_translated && !showOriginal && !hasTranslated) {
+                setIsTranslating(true);
+                const tTitle = await translate(post.title_original, post.locale, currentLangCode);
+                const tBody = await translate(post.body_original, post.locale, currentLangCode);
+                setTranslatedTitle(tTitle);
+                setTranslatedBody(tBody);
+                setHasTranslated(true);
+                setIsTranslating(false);
+            }
+        };
+        fetchTranslation();
+
+        // Reset if post changes
+        if (post && (!translatedTitle || !translatedBody) && post.locale === currentLangCode) {
+            setHasTranslated(false);
+        }
+    }, [post, currentLangCode, showOriginal, translate, hasTranslated, translatedTitle, translatedBody]);
+
+    const displayTitle = showOriginal || (post && post.locale === currentLangCode) ? post?.title_original : (post?.title_translated || translatedTitle || post?.title_original);
+    const displayBody = showOriginal || (post && post.locale === currentLangCode) ? post?.body_original : (post?.body_translated || translatedBody || post?.body_original);
+    const showLoadingState = engineTranslating || isTranslating;
+    const needsTranslationToggle = post && post.locale && post.locale !== currentLangCode;
+
+    const getMockPosts = useCallback(() => ({
+        'fallback-1': {
+            id: 'fallback-1',
+            title_original: "O cafézinho da tarde em São Paulo",
+            title_translated: t('post1_title'),
+            body_original: "O cafézinho da tarde é sagrado em São Paulo. 🇧🇷",
+            body_translated: t('post1_body'),
+            context_title: t('post1_context_title'),
+            context_body: t('post1_context_body'),
+            author: { username: 'ana_silva', avatar_url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Ana' },
+            community: { name: 'Culture' },
+            locale: 'pt',
+            upvotes: 1240,
+            comment_count: 45,
+            created_at: new Date().toISOString()
+        },
+        'fallback-2': {
+            id: 'fallback-2',
+            title_original: "Existence precedes essence?",
+            title_translated: t('post2_title'),
+            body_original: "Does existence precede essence? Exploring Sartrean thoughts in modern era.",
+            body_translated: t('post2_body'),
+            context_title: t('post2_context_title'),
+            context_body: t('post2_context_body'),
+            author: { username: 'marcus_a', avatar_url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Marcus' },
+            community: { name: 'Philosophy' },
+            locale: 'en',
+            upvotes: 850,
+            comment_count: 32,
+            created_at: new Date(Date.now() - 3600000).toISOString()
+        }
+    }), [t]);
+
+    const fetchPostData = useCallback(async () => {
+        setIsLoading(true);
+        console.log('[PostThreadPage] Fetching data for id:', id);
+        try {
+            // Fetch post with relations
+            const { data: postData, error: postError } = await supabase
+                .from('posts')
+                .select(`
+                    *,
+                    author:profiles!posts_author_id_fkey(username, avatar_url),
+                    community:communities!posts_community_id_fkey(name)
+                `)
+                .eq('id', id)
+                .single();
+
+            if (postError) {
+                console.error('[PostThreadPage] Supabase error in post fetch:', postError);
+                // Fallback to simpler query if primary fails
+                const { data: simplePost, error: simplePostError } = await supabase
+                    .from('posts')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (simplePostError) throw simplePostError;
+                setPost(simplePost);
+            } else {
+                // Check if this post is saved by the user
+                let isSaved = false;
+                if (user) {
+                    const { data: savedData } = await supabase
+                        .from('saved_posts')
+                        .select('id')
+                        .eq('post_id', id)
+                        .eq('user_id', user.id)
+                        .single();
+                    if (savedData) isSaved = true;
+                }
+                setPost({ ...postData, is_saved: isSaved });
+            }
+
+            // Fetch comments
+            const { data: commentData, error: commentError } = await supabase
+                .from('comments')
+                .select(`
+                    *,
+                    author:profiles!comments_author_id_fkey(username, avatar_url)
+                `)
+                .eq('post_id', id)
+                .order('created_at', { ascending: true });
+
+            if (commentError) {
+                console.error('[PostThreadPage] Supabase error in comments fetch:', commentError);
+                const { data: simpleComments } = await supabase
+                    .from('comments')
+                    .select('*')
+                    .eq('post_id', id);
+                setComments(simpleComments || []);
+            } else {
+                setComments(commentData || []);
+            }
+        } catch (err) {
+            console.error('[PostThreadPage] Terminal error fetching post (using fallback):', err);
+            const mocks = getMockPosts();
+            setPost(mocks['fallback-1']);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [id, getMockPosts, user]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        if (id.startsWith('fallback-')) {
+            const mocks = getMockPosts();
+            setPost(mocks[id] || mocks['fallback-1']);
+            setIsLoading(false);
+        } else {
+            fetchPostData();
+        }
+
+        // Real-time subscription for comments
+        let subscription;
+        const setupSubscription = async () => {
+            subscription = supabase
+                .channel(`public:comments:post_id=eq.${id}`)
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'comments',
+                    filter: `post_id=eq.${id}`
+                }, (payload) => {
+                    console.log('[PostThreadPage] Real-time comment update received:', payload);
+                    fetchPostData();
+                })
+                .subscribe();
+        };
+
+        if (!id.startsWith('fallback-')) {
+            setupSubscription();
+        }
+
+        return () => {
+            if (subscription) subscription.unsubscribe();
+        };
+    }, [id, fetchPostData, getMockPosts]);
+
+    const handleLikePost = async () => {
+        if (!user || !post || id.startsWith('fallback-')) return;
+
+        console.log('[PostThreadPage] handleLikePost triggered');
+
+        try {
+            // Check if already voted
+            const { data: existingVote, error: checkError } = await supabase
+                .from('votes')
+                .select('*')
+                .eq('post_id', id)
+                .eq('user_id', user.id)
+                .single();
+
+            if (checkError && checkError.code !== 'PGRST116') throw checkError;
+
+            if (existingVote) {
+                // Remove vote
+                await supabase.from('votes').delete().eq('id', existingVote.id);
+                const newUpvotes = Math.max(0, (post.upvotes || 0) - 1);
+                await supabase.from('posts').update({ upvotes: newUpvotes }).eq('id', id);
+                setPost(prev => ({ ...prev, upvotes: newUpvotes }));
+            } else {
+                // Add vote
+                await supabase.from('votes').insert({ post_id: id, user_id: user.id, vote_type: 'up' });
+                const newUpvotes = (post.upvotes || 0) + 1;
+                await supabase.from('posts').update({ upvotes: newUpvotes }).eq('id', id);
+
+                // Automatically save post when upvoting
+                const { error: saveError } = await supabase
+                    .from('saved_posts')
+                    .insert({ post_id: id, user_id: user.id });
+
+                if (saveError && saveError.code !== '23505') {
+                    console.error('[PostThreadPage] Note: Failed to auto-save post on upvote', saveError);
+                }
+
+                setPost(prev => ({ ...prev, upvotes: newUpvotes, is_saved: true }));
+            }
+        } catch (err) {
+            console.error('[PostThreadPage] Error liking post:', err);
+        }
+    };
+
+    const handleToggleSavePost = async () => {
+        if (!user || !post || id.startsWith('fallback-')) return;
+        console.log('[PostThreadPage] handleToggleSavePost');
+        try {
+            if (post.is_saved) {
+                const { error } = await supabase
+                    .from('saved_posts')
+                    .delete()
+                    .eq('post_id', id)
+                    .eq('user_id', user.id);
+                if (error) throw error;
+                setPost(prev => ({ ...prev, is_saved: false }));
+            } else {
+                const { error } = await supabase
+                    .from('saved_posts')
+                    .insert({ post_id: id, user_id: user.id });
+                if (error) throw error;
+                setPost(prev => ({ ...prev, is_saved: true }));
+            }
+        } catch (err) {
+            console.error('[PostThreadPage] Error toggling save:', err);
+        }
+    };
+
+    const handleLikeComment = async (commentId, currentUpvotes) => {
+        if (!user || id.startsWith('fallback-')) return;
+
+        console.log('[PostThreadPage] handleLikeComment triggered for:', commentId);
+
+        try {
+            // Check if already voted on this comment
+            const { data: existingVote, error: checkError } = await supabase
+                .from('votes')
+                .select('*')
+                .eq('comment_id', commentId)
+                .eq('user_id', user.id)
+                .single();
+
+            if (checkError && checkError.code !== 'PGRST116') throw checkError;
+
+            if (existingVote) {
+                // Remove vote
+                await supabase.from('votes').delete().eq('id', existingVote.id);
+                const newUpvotes = Math.max(0, currentUpvotes - 1);
+                await supabase.from('comments').update({ upvotes: newUpvotes }).eq('id', commentId);
+                setComments(prev => prev.map(c => c.id === commentId ? { ...c, upvotes: newUpvotes } : c));
+            } else {
+                // Add vote
+                await supabase.from('votes').insert({ comment_id: commentId, user_id: user.id, vote_type: 'up' });
+                const newUpvotes = currentUpvotes + 1;
+                await supabase.from('comments').update({ upvotes: newUpvotes }).eq('id', commentId);
+                setComments(prev => prev.map(c => c.id === commentId ? { ...c, upvotes: newUpvotes } : c));
+            }
+        } catch (err) {
+            console.error('[PostThreadPage] Error liking comment:', err);
+        }
+    };
+
+    const ensureProfileExists = async () => {
+        if (!user) return null;
+        console.log('[PostThreadPage] Ensuring profile exists for:', user.id);
+        try {
+            const { data: existingProfile, error: fetchError } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', user.id)
+                .single();
+
+            if (existingProfile) return existingProfile;
+
+            if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+                console.error('[PostThreadPage] Error checking profile:', fetchError);
+            }
+
+            console.log('[PostThreadPage] Profile not found, creating lazy profile...');
+            const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: user.id,
+                    username: user.username || `user_${user.id.substring(0, 8)}`,
+                    avatar_url: user.imageUrl
+                })
+                .select()
+                .single();
+
+            if (createError) {
+                console.error('[PostThreadPage] Lazy profile creation failed:', createError);
+                throw createError;
+            }
+
+            console.log('[PostThreadPage] Lazy profile created successfully');
+            return newProfile;
+        } catch (err) {
+            console.error('[PostThreadPage] Profile check/create error:', err);
+            return null;
+        }
+    };
+
+    const [newComment, setNewComment] = useState('');
+    const handleCommentSubmit = async () => {
+        if (!newComment.trim() || id.startsWith('fallback-')) {
+            if (id.startsWith('fallback-')) alert('Commenting is disabled in Demo Mode.');
+            return;
+        }
+
+        try {
+            // Ensure profile exists (Lazy Creation)
+            const profile = await ensureProfileExists();
+
+            if (!profile) {
+                console.error('[PostThreadPage] Could not find or create profile after checks');
+                alert('Profile not found and could not be created automatically. Please try completing onboarding again or check your connection.');
+                return;
+            }
+
+            const { error } = await supabase.from('comments').insert({
+                post_id: id,
+                body_original: newComment,
+                author_id: profile.id,
+                locale: 'en' // Default to English for now or detect from i18n
+            });
+
+            if (error) throw error;
+            setNewComment('');
+            fetchPostData();
+        } catch (err) {
+            console.error('[PostThreadPage] Error posting comment:', err);
+            alert(`Failed to post comment: ${err.message}`);
+        }
+    };
+
+    const handleShare = () => {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    };
+
+    const navItems = [
+        { icon: Home, label: t('navHome', 'Home'), path: '/feed' },
+        { icon: TrendingUp, label: t('navTrending', 'Trending'), path: '/trending' },
+        { icon: Users, label: t('navCommunities', 'Communities'), path: '/communities' },
+        { icon: Bell, label: t('navNotifications', 'Notifications'), path: '/notifications' },
+        { icon: Bookmark, label: t('navSaved', 'Saved'), path: '/saved' },
+        { icon: Settings, label: t('navSettings', 'Settings'), path: '/settings' },
+    ];
 
     return (
         <div className="bg-[#f6f6f8] dark:bg-[#0A0A0F] font-display text-slate-900 dark:text-slate-100 antialiased min-h-screen selection:bg-[#2513ec]/30 selection:text-white">
             <div className="flex min-h-screen w-full flex-row">
-                {/* Left Sidebar (Fixed width) */}
+                {/* Left Sidebar */}
                 <div className="hidden lg:flex w-72 flex-col fixed inset-y-0 left-0 border-r border-slate-200 dark:border-white/5 bg-[#f6f6f8] dark:bg-[#0A0A0F] z-20">
                     <div className="flex h-full flex-col justify-between p-6">
                         <div className="flex flex-col gap-8">
-                            {/* Brand */}
                             <Link to="/feed" className="flex items-center gap-3 px-2">
                                 <div className="bg-[#2513ec] aspect-square rounded-xl size-10 flex items-center justify-center text-white">
                                     <Monitor size={24} />
                                 </div>
                                 <div className="flex flex-col">
                                     <h1 className="text-slate-900 dark:text-white text-lg font-bold tracking-tight">EchoBoard</h1>
-                                    <p className="text-slate-500 dark:text-slate-400 text-xs">Global conversations</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-xs">{t('globalConversations', 'Global conversations')}</p>
                                 </div>
                             </Link>
 
-                            {/* Navigation */}
                             <nav className="flex flex-col gap-2">
-                                <Link to="/feed" className="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group">
-                                    <Home className="text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec] transition-colors" size={24} />
-                                    <span className="text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec] transition-colors">Home</span>
-                                </Link>
-                                <a className="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
-                                    <TrendingUp className="text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec] transition-colors" size={24} />
-                                    <span className="text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec] transition-colors">Trending</span>
-                                </a>
-                                <a className="flex items-center gap-4 px-4 py-3 rounded-full bg-slate-200 dark:bg-[#1A1A24] border border-transparent dark:border-white/10 transition-colors" href="#">
-                                    <Users className="text-[#2513ec]" size={24} />
-                                    <span className="text-slate-900 dark:text-white font-semibold">Communities</span>
-                                </a>
-                                <a className="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
-                                    <Bell className="text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec] transition-colors" size={24} />
-                                    <span className="text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec] transition-colors">Notifications</span>
-                                    <span className="ml-auto bg-[#2513ec] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
-                                </a>
-                                <a className="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
-                                    <Bookmark className="text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec] transition-colors" size={24} />
-                                    <span className="text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec] transition-colors">Saved</span>
-                                </a>
+                                {navItems.map((item) => (
+                                    <Link
+                                        key={item.label}
+                                        to={item.path}
+                                        className={`flex items-center gap-4 px-4 py-3 rounded-full transition-colors ${item.active ? 'bg-slate-200 dark:bg-[#1A1A24] border border-transparent dark:border-white/10' : 'hover:bg-slate-200 dark:hover:bg-white/5 group'}`}
+                                    >
+                                        <item.icon className={`${item.active ? 'text-[#2513ec]' : 'text-slate-500 dark:text-slate-400 group-hover:text-[#2513ec]'}`} size={24} />
+                                        <span className={`${item.active ? 'text-slate-900 dark:text-white font-semibold' : 'text-slate-600 dark:text-slate-300 font-medium group-hover:text-[#2513ec]'}`}>{item.label}</span>
+                                        {item.badge && <span className="ml-auto bg-[#2513ec] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{item.badge}</span>}
+                                    </Link>
+                                ))}
                             </nav>
                         </div>
 
-                        {/* User Profile */}
-                        <div className="flex items-center gap-3 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 cursor-pointer transition-colors">
-                            <img alt="User profile" className="size-10 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBs2f0-h93LkenqAyWP9TBnwMqC_-YQX9bphMPKxXIzzKbZ4y1tE1BnTFipNWiBgDlCcAZ9priag1PLmMjfO_tH5xxBDd5Dy7RQWoxshouEZ4Ot6jUYjVG3x5RdHkahXFiIloG17a_hEofNhmxAonJFaQdPfRTNsszo3dZWqkJQ1xHJ5JnMY_ucOMHtV7IqZBUYqCGiakowZxE4mZncrO-3nDbvQ3RA_XXIrcOGFdwGvhIhXd_LukH7kPxLoFGloeae7-EcZQ-fyjbF" />
+                        <Link to="/settings" className="flex items-center gap-3 px-4 py-3 rounded-full hover:bg-slate-200 dark:hover:bg-white/5 cursor-pointer transition-colors">
+                            <img alt="User" className="size-10 rounded-full border border-slate-200 dark:border-white/10" src={user?.imageUrl || "https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=e5e7eb"} />
                             <div className="flex flex-col">
-                                <span className="text-sm font-semibold text-slate-900 dark:text-white">Alex Morgan</span>
-                                <span className="text-xs text-slate-500 dark:text-slate-400">@alex_writer</span>
+                                <span className="text-sm font-semibold text-slate-900 dark:text-white">{user?.fullName || 'Felix K.'}</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">@{user?.username || 'user'}</span>
                             </div>
                             <MoreHorizontal className="ml-auto text-slate-400" size={20} />
-                        </div>
+                        </Link>
                     </div>
                 </div>
 
-                {/* Main Content Area (Center + Right) */}
+                {/* Main Content Area */}
                 <div className="flex flex-1 lg:pl-72 justify-center">
-                    {/* Center Column: Post & Comments */}
                     <main className="w-full max-w-[680px] py-6 px-4 flex flex-col gap-6">
-                        {/* Back Button Mobile Only */}
                         <Link to="/feed" className="lg:hidden flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
                             <ArrowLeft size={20} />
-                            <span className="font-medium">Back to Feed</span>
+                            <span className="font-medium">{t('backToFeed', 'Back to Feed')}</span>
                         </Link>
 
-                        {/* Main Post Card */}
-                        <article className="relative flex flex-col bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
-                            {/* Post Header Image */}
-                            <div className="h-64 w-full bg-cover bg-center relative" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBdSvGBpopzO_kzDW0wg2OwqVeGV_X9yKPBXbHZa3_V1g71FdDTdHshfmLmWGWElI5dANcx-h6J9RUVVKvyGERFVORrsM73YAwbw_sRS4t4uVGoKM2vVePZ_-ynC1zW7quq_kevSaHYGO6OOxCZ5ibogIznZQnPPqhYf2R9IRtAmI46Sfb2E3wtBa8aVDiAqtSLWspiGbRYa-KaKIZdJ_dO30SvcCkXErYweVK3oSDGU4i_pmz93SSaQ33hbUsDE4jJea1ei5_zHmEq')" }}>
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A24]/90 via-transparent to-transparent"></div>
-                                {/* Floating Language Toggle */}
-                                <div className="absolute top-4 right-4 flex bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/10">
-                                    <button className="px-4 py-1.5 rounded-full bg-[#2513ec] text-white text-xs font-bold shadow-lg transition-transform hover:scale-105">
-                                        EN 🇺🇸
-                                    </button>
-                                    <button className="px-4 py-1.5 rounded-full text-white/70 hover:text-white text-xs font-medium transition-colors">
-                                        PT 🇧🇷
-                                    </button>
-                                </div>
-                                {/* Title Overlay */}
-                                <div className="absolute bottom-0 left-0 w-full p-6 pt-12">
-                                    <div className="flex items-center gap-3 mb-3 text-white/80 text-sm">
-                                        <span className="bg-white/10 px-2 py-0.5 rounded text-xs font-medium backdrop-blur-sm border border-white/10">Culture</span>
-                                        <span>•</span>
-                                        <span>5 min read</span>
-                                    </div>
-                                    <h1 className="text-3xl font-bold text-white leading-tight mb-2 drop-shadow-sm">
-                                        Why remote work in São Paulo is changing coffee culture
-                                    </h1>
-                                </div>
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center py-40 gap-4">
+                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2513ec]"></div>
+                                <p className="text-sm font-medium text-slate-500">{t('loadingPosts')}</p>
                             </div>
-
-                            {/* Post Meta & Body */}
-                            <div className="p-6 md:p-8 flex flex-col gap-6">
-                                {/* Author Line */}
-                                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-6">
-                                    <div className="flex items-center gap-3">
-                                        <img alt="Alex writer profile" className="size-10 rounded-full border border-slate-200 dark:border-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXYhKu7jiRx-l-YRcYC8tL-g7RwgLntTk-XtRCrEHA-QE5P7gs3nmCybSOp2Nuh2o-tzfb77qiKvoy9tUEV-2NBcea7XXiwR6jPGKm0lKKAso0RFfQDGDjDDiRl5rwyqyIIrv0NfT-9gNJO9c9bjyYKkYvFK1dlTQvQsamQGWJfgtlfyRNYx77mxLUXsUpcOgTuNZ6-RQb55TUsupMEiZnCyX78iv909oiJzZ8EkxR7AxRseTn1XwU3W8eyJbg8dUZADiZskP-i3r0" />
-                                        <div>
-                                            <p className="text-sm font-semibold text-slate-900 dark:text-white hover:underline cursor-pointer">Alex Morgan</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Posted 2h ago in <span className="text-[#2513ec] hover:underline cursor-pointer">@BrazilTech</span></p>
-                                        </div>
-                                    </div>
-                                    <button className="flex items-center gap-2 text-[#2513ec] hover:text-[#2513ec]/80 font-medium text-sm transition-colors">
-                                        <Plus size={20} />
-                                        Follow
-                                    </button>
+                        ) : error ? (
+                            <div className="flex flex-col items-center justify-center py-40 gap-4 text-center">
+                                <div className="p-4 rounded-full bg-red-500/10 text-red-500">
+                                    <X size={32} />
                                 </div>
-
-                                {/* Article Text */}
-                                <div className="prose prose-slate dark:prose-invert max-w-none">
-                                    <p className="text-lg leading-[1.8] text-slate-600 dark:text-slate-300 font-normal">
-                                        The traditional <em className="text-slate-900 dark:text-white font-medium">'cafezinho'</em> is being reimagined as digital nomads flood the city's historic center. What used to be a quick stand-up espresso is evolving into hour-long laptop sessions, challenging local etiquette and sparking a new wave of hybrid spaces.
-                                    </p>
-                                    <p className="text-lg leading-[1.8] text-slate-600 dark:text-slate-300 font-normal mt-4">
-                                        Shop owners in Vila Madalena are adapting fast. "We used to have no outlets," explains Marco, a third-generation barista. "Now, they are more important than the beans." This shift represents more than just infrastructure; it's a fundamental change in how Paulistanos interact with their public spaces.
-                                    </p>
-                                </div>
-
-                                {/* Reveal Original Button */}
-                                <div className="flex justify-center py-2">
-                                    <button
-                                        onClick={() => setShowOriginal(!showOriginal)}
-                                        className={`group flex items-center gap-2 px-5 py-2.5 rounded-full border transition-all ${showOriginal ? 'bg-[#2513ec] border-[#2513ec] text-white' : 'border-slate-200 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400'}`}
-                                    >
-                                        <Monitor className={`text-[20px] transition-colors ${showOriginal ? 'text-white' : 'text-slate-400 group-hover:text-[#2513ec]'}`} />
-                                        <span className={`text-sm font-bold transition-colors ${showOriginal ? 'text-white' : 'group-hover:text-[#2513ec]'}`}>Reveal Original Language (Portuguese)</span>
-                                    </button>
-                                </div>
-
-                                {showOriginal && (
-                                    <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg font-mono text-sm text-slate-700 dark:text-slate-300 mt-2">
-                                        <p>O tradicional 'cafezinho' está sendo reinventado à medida que nômades digitais inundam o centro histórico da cidade...</p>
-                                    </div>
-                                )}
-
-
-                                {/* Cultural Context Panel */}
-                                <div className="relative overflow-hidden rounded-lg bg-slate-50 dark:bg-[#121118] border border-[#D4AF37]/40 p-5 mt-2">
-                                    <div className="absolute top-0 left-0 w-1 h-full bg-[#D4AF37]"></div>
-                                    <div className="flex flex-col gap-2 relative z-10 pl-2">
-                                        <div className="flex items-center gap-2 text-[#D4AF37] mb-1">
-                                            <Lightbulb size={20} />
-                                            <span className="text-xs font-bold tracking-widest uppercase">Cultural Context</span>
-                                        </div>
-                                        <h3 className="text-slate-900 dark:text-white font-bold text-lg">The Cafezinho Ritual</h3>
-                                        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-                                            The 'cafezinho' is a ritual of hospitality in Brazil, typically a small, strong coffee offered for free in offices and shops to welcome guests. It is traditionally consumed quickly while standing, emphasizing social lubrication over consumption.
-                                        </p>
-                                    </div>
-                                </div>
+                                <p className="text-lg font-bold text-red-500">{error}</p>
+                                <Link to="/feed" className="text-[#2513ec] font-bold hover:underline">{t('backToFeed')}</Link>
                             </div>
-
-                            {/* Action Bar */}
-                            <div className="bg-slate-50 dark:bg-[#12101a] border-t border-slate-200 dark:border-white/5 px-6 py-4 flex items-center justify-between">
-                                <div className="flex items-center gap-6">
-                                    <button className="flex items-center gap-2 group">
-                                        <Heart className="text-slate-400 group-hover:text-[#2513ec] transition-colors" size={20} />
-                                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-[#2513ec]">1.2k</span>
-                                    </button>
-                                    <button className="flex items-center gap-2 group">
-                                        <MessageCircle className="text-slate-400 group-hover:text-blue-400 transition-colors" size={20} />
-                                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-blue-400">45</span>
-                                    </button>
-                                    <button className="flex items-center gap-2 group">
-                                        <Share className="text-slate-400 group-hover:text-green-400 transition-colors" size={20} />
-                                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-green-400">Share</span>
-                                    </button>
-                                </div>
-                                <button className="text-slate-400 hover:text-white transition-colors">
-                                    <Bookmark size={20} />
-                                </button>
+                        ) : !post ? (
+                            <div className="flex flex-col items-center justify-center py-40 gap-4 text-center">
+                                <p className="text-lg font-bold text-slate-500">Post not found</p>
+                                <Link to="/feed" className="text-[#2513ec] font-bold hover:underline">{t('backToFeed')}</Link>
                             </div>
-                        </article>
-
-                        {/* Comment Section Composer */}
-                        <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-6 shadow-sm">
-                            <div className="flex gap-4">
-                                <img alt="Your avatar" className="size-10 rounded-full border border-slate-200 dark:border-white/10 shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkTJAaxfPZTf9b-2Djl3Z13CrmE3xdOcLqPx2N8igo75Z7r3S5bTzoA3YJMVEfrlycRKw5-7rJChAi3MNeX9cRIxpxQsR3UkRLjE2p32DNV7rcG_hguaG2eO_ya6XfvrHtK8WPX_aATCAxiV_lal5CK57l1PI0VGzMdAlSNHFwO-ZNrGdfxrPkExiMvFNHbZN6W6vzZN0ZXaWz1uOLlaFCI_cQ4ArpMCyX-Pw8_SvvXmOYGnq-eBMP1Z6vEXQExdbbH0-bRH6u8QHw" />
-                                <div className="flex-1 flex flex-col gap-3">
-                                    <div className="relative">
-                                        <textarea className="w-full bg-slate-50 dark:bg-[#0A0A0F] border border-slate-200 dark:border-white/10 rounded-lg p-4 min-h-[100px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#2513ec] focus:border-transparent resize-y text-sm leading-relaxed" placeholder="Share your perspective..."></textarea>
-                                        <div className="absolute bottom-3 right-3">
-                                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-slate-200 dark:bg-white/10 text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                                Writing in English
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex gap-2">
-                                            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors">
-                                                <Bold size={20} />
-                                            </button>
-                                            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors">
-                                                <Italic size={20} />
-                                            </button>
-                                            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors">
-                                                <LinkIcon size={20} />
+                        ) : (
+                            <>
+                                <article className="relative flex flex-col bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+                                    <div className="h-64 w-full bg-cover bg-center relative" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=2000')" }}>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#1A1A24]/90 via-transparent to-transparent rounded-t-xl"></div>
+                                        <div className="absolute top-4 right-4 flex bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/10 z-10">
+                                            <button className="px-4 py-1.5 rounded-full bg-[#2513ec] text-white text-xs font-bold shadow-lg transition-transform hover:scale-105">
+                                                {post.locale?.toUpperCase() || 'EN'} {post.locale === 'pt' ? '🇧🇷' : post.locale === 'ja' ? '🇯🇵' : '🇺🇸'}
                                             </button>
                                         </div>
-                                        <button className="bg-[#2513ec] hover:bg-[#2513ec]/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-[#2513ec]/25">
-                                            Post Comment
+                                        <div className="absolute bottom-0 left-0 w-full p-6 pt-12 z-10">
+                                            <div className="flex items-center gap-3 mb-3 text-white/80 text-sm">
+                                                <span className="bg-white/10 px-2 py-0.5 rounded text-xs font-medium backdrop-blur-sm border border-white/10">{post.community?.name || 'General'}</span>
+                                                <span>•</span>
+                                                <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                                            </div>
+                                            <h1 className="text-3xl font-bold text-white leading-tight mb-2 drop-shadow-sm">
+                                                {showLoadingState && !hasTranslated ? <span className="animate-pulse bg-white/20 h-8 w-3/4 block rounded"></span> : displayTitle}
+                                            </h1>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 md:p-8 flex flex-col gap-6">
+                                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-6">
+                                            <div className="flex items-center gap-3">
+                                                <img alt={post.author?.username} className="size-10 rounded-full border border-slate-200 dark:border-white/10" src={post.author?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${post.author?.username}&backgroundColor=e5e7eb`} />
+                                                <div>
+                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white hover:underline cursor-pointer">{post.author?.username || 'Anonymous'}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{t('postedIn')} <span className="text-[#2513ec] hover:underline cursor-pointer">{post.community?.name || 'General'}</span></p>
+                                                </div>
+                                            </div>
+                                            <button className="flex items-center gap-2 text-[#2513ec] hover:text-[#2513ec]/80 font-medium text-sm transition-colors">
+                                                <Plus size={20} />
+                                                {t('follow', 'Follow')}
+                                            </button>
+                                        </div>
+
+                                        <div className={`prose prose-slate dark:prose-invert max-w-none ${showLoadingState && !hasTranslated ? 'opacity-50' : 'opacity-100'} transition-opacity`}>
+                                            {showLoadingState && !hasTranslated ? (
+                                                <div className="space-y-4">
+                                                    <span className="animate-pulse bg-slate-200 dark:bg-slate-700 h-4 w-full block rounded"></span>
+                                                    <span className="animate-pulse bg-slate-200 dark:bg-slate-700 h-4 w-11/12 block rounded"></span>
+                                                    <span className="animate-pulse bg-slate-200 dark:bg-slate-700 h-4 w-4/5 block rounded"></span>
+                                                </div>
+                                            ) : (
+                                                <p className="text-lg leading-[1.8] text-slate-600 dark:text-slate-300 font-normal">
+                                                    {displayBody}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {(needsTranslationToggle || post.title_translated) && (
+                                            <div className="flex justify-center py-2 relative">
+                                                <button
+                                                    onClick={() => setShowOriginal(!showOriginal)}
+                                                    className={`group flex items-center gap-2 px-5 py-2.5 rounded-full border transition-all ${showOriginal ? 'bg-[#2513ec] border-[#2513ec] text-white shadow-xl shadow-[#2513ec]/20' : 'border-slate-200 dark:border-white/20 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400'}`}
+                                                >
+                                                    <Globe className={`text-[20px] transition-colors ${showOriginal ? 'text-white' : 'text-slate-400 group-hover:text-[#2513ec]'}`} />
+                                                    <span className={`text-sm font-bold transition-colors ${showOriginal ? 'text-white' : 'group-hover:text-[#2513ec]'}`}>{showOriginal ? 'See Translation' : t('revealOriginal')}</span>
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Cultural Context */}
+                                        {(post.context_title || post.id === 'fallback-1') && (
+                                            <div className="relative overflow-hidden rounded-lg bg-slate-50 dark:bg-[#121118] border border-[#D4AF37]/40 p-5 mt-2">
+                                                <div className="absolute top-0 left-0 w-1 h-full bg-[#D4AF37]"></div>
+                                                <div className="flex flex-col gap-2 relative z-10 pl-2">
+                                                    <div className="flex items-center gap-2 text-[#D4AF37] mb-1">
+                                                        <Lightbulb size={20} />
+                                                        <span className="text-xs font-bold tracking-widest uppercase">{post.context_title || t('post1_context_title')}</span>
+                                                    </div>
+                                                    <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                                                        {post.context_body || t('post1_context_body')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-slate-50 dark:bg-[#12101a] border-t border-slate-200 dark:border-white/5 px-6 py-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-6">
+                                            <button
+                                                onClick={handleLikePost}
+                                                className="flex items-center gap-2 group"
+                                            >
+                                                <Heart className={`${(post.upvotes || 0) > 1200 ? 'fill-[#2513ec] text-[#2513ec]' : 'text-slate-400'} group-hover:text-[#2513ec] transition-colors`} size={20} />
+                                                <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-[#2513ec]">{post.upvotes}</span>
+                                            </button>
+                                            <button className="flex items-center gap-2 group">
+                                                <MessageCircle className="text-slate-400 group-hover:text-blue-400 transition-colors" size={20} />
+                                                <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-blue-400">{post.comment_count}</span>
+                                            </button>
+                                            <button
+                                                onClick={handleShare}
+                                                className="flex items-center gap-2 group"
+                                            >
+                                                <Share className="text-slate-400 group-hover:text-green-400 transition-colors" size={20} />
+                                                <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-green-400">{t('share')}</span>
+                                            </button>
+                                        </div>
+                                        <button
+                                            onClick={handleToggleSavePost}
+                                            className={`transition-colors ${post.is_saved ? 'text-[#2513ec]' : 'text-slate-400 hover:text-[#2513ec]'}`}
+                                        >
+                                            <Bookmark size={20} className={post.is_saved ? 'fill-current' : ''} />
                                         </button>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+                                </article>
 
-                        {/* Discussion Thread */}
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center justify-between px-2">
-                                <h3 className="text-slate-900 dark:text-white font-bold text-lg">45 Comments</h3>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">Sort by:</span>
-                                    <button className="flex items-center gap-1 text-sm font-semibold text-slate-900 dark:text-white hover:text-[#2513ec] transition-colors">
-                                        Top Rated
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Comment 1 */}
-                            <div className="flex flex-col gap-3">
-                                <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-5 shadow-sm">
+                                {/* Comment Composer */}
+                                <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-6 shadow-sm">
                                     <div className="flex gap-4">
-                                        <div className="flex flex-col items-center gap-1">
-                                            <img alt="Kenji profile" className="size-10 rounded-full border border-slate-200 dark:border-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGvGiETCr7meP9ByepFDocj7IjNtz-QG7ScKJPSHI4CZPbnGD2dX3iX0Bnj-3F4o3g--ic0KPzQ687QsMRXG4PnKxigUdBO_ycQ2rRJS57VGFgiWFhZBWNRgQ63_ppKnHhIqRamXVoTohXaz3AlN_P_W6OxAM8qyYFwFZa6u0QkEp5LRYar1Zl0-RDTU3ulpfObGu73gjDwoeV-K3QSJ36VKCBSKvkCc54O-ItcJM_CBag3qMrpmFjvauDuwoMqVc2SR4L4-jc5jxs" />
-                                            <div className="h-full w-px bg-slate-200 dark:bg-white/10 my-2"></div>
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-bold text-slate-900 dark:text-white">Kenji M.</span>
-                                                    <span className="text-xs bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/5">🇯🇵 JP</span>
-                                                    <span className="text-xs text-slate-400">• 1h ago</span>
+                                        <img alt="User" className="size-10 rounded-full border border-slate-200 dark:border-white/10 object-cover" src={user?.imageUrl || `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.id}&backgroundColor=e5e7eb`} />
+                                        <div className="flex-1 flex flex-col gap-3">
+                                            <textarea
+                                                value={newComment}
+                                                onChange={(e) => setNewComment(e.target.value)}
+                                                className="w-full bg-slate-50 dark:bg-[#0A0A0F] border border-slate-200 dark:border-white/10 rounded-lg p-4 min-h-[100px] text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#2513ec] focus:border-transparent resize-y text-sm leading-relaxed"
+                                                placeholder={t('sharePerspective', 'Share your perspective...')}
+                                            ></textarea>
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex gap-2">
+                                                    <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"><Bold size={20} /></button>
+                                                    <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"><Italic size={20} /></button>
+                                                    <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 transition-colors"><LinkIcon size={20} /></button>
                                                 </div>
-                                            </div>
-                                            <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-3">
-                                                In Tokyo, we see a similar trend with 'kissaten'. They used to be quiet places for contemplation, but remote work is turning them into co-working hubs. Interesting to see the parallels in Brazil.
-                                            </p>
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#0A0A0F] rounded-full px-2 py-1 border border-slate-200 dark:border-white/5">
-                                                    <button className="p-1 hover:text-[#2513ec] text-slate-400 transition-colors">
-                                                        <Heart size={18} />
-                                                    </button>
-                                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">248</span>
-                                                </div>
-                                                <button className="text-xs font-bold text-slate-500 hover:text-[#2513ec] transition-colors">Reply</button>
+                                                <button
+                                                    onClick={handleCommentSubmit}
+                                                    className="bg-[#2513ec] hover:bg-[#2513ec]/90 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-[#2513ec]/25"
+                                                >
+                                                    {t('postComment', 'Post Comment')}
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Nested Reply */}
-                                <div className="pl-12">
-                                    <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-5 shadow-sm relative">
-                                        <div className="absolute left-[-24px] top-8 w-6 h-[2px] bg-slate-200 dark:border-white/10"></div>
-                                        <div className="absolute left-[-24px] top-[-30px] w-[2px] h-[60px] bg-slate-200 dark:border-white/10 rounded-bl-lg"></div>
-                                        <div className="flex gap-4">
-                                            <img alt="Thomas profile" className="size-10 rounded-full border border-slate-200 dark:border-white/10 shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVL5pEGmKW3Vu69sgFORp4fwAHgJwymk2CW-2lZWZPXDcvFpLkouFd4iD4zkJ6cQhqpdjA7pkad6ZnZukCQBvyJ0165TNY6SH5NW2ejBeTHCoFgWylCxbAATdMHUpJGfar6ekLa8bm_9FOqAk8BfPWDA1aZzqf7cip4fFuU6_ZGhgQcOXP2NoP-T_tWEgQI2BOMEFO8lU9d8VgOWspAdFHckQitF75PDRq-F3pAOjnEaLLy52rso0FTogEqTtfaNwZnYJ0VZCT7wtv" />
-                                            <div className="flex-1">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-bold text-slate-900 dark:text-white">Thomas B.</span>
-                                                        <span className="text-xs bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/5">🇩🇪 DE</span>
-                                                        <span className="text-xs text-slate-400">• 45m ago</span>
+                                {/* Comments List */}
+                                <div className="flex flex-col gap-4">
+                                    {comments.map((comment) => (
+                                        <div key={comment.id} className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-6 shadow-sm">
+                                            <div className="flex gap-4">
+                                                <img alt={comment.author?.username} className="size-8 rounded-full border border-slate-200 dark:border-white/10" src={comment.author?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${comment.author?.username}&backgroundColor=e5e7eb`} />
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="font-bold text-sm">{comment.author?.username || 'Anonymous'}</span>
+                                                        <span className="text-xs text-slate-500">{new Date(comment.created_at).toLocaleDateString()}</span>
                                                     </div>
-                                                </div>
-                                                <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-3">
-                                                    The noise level is the biggest issue here in Berlin. Are the cafes in SP implementing soundproofing?
-                                                </p>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#0A0A0F] rounded-full px-2 py-1 border border-slate-200 dark:border-white/5">
-                                                        <button className="p-1 hover:text-[#2513ec] text-slate-400 transition-colors">
-                                                            <Heart size={18} />
+                                                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                                                        {comment.body_original}
+                                                    </p>
+                                                    <div className="flex items-center gap-4 mt-4">
+                                                        <button
+                                                            onClick={() => handleLikeComment(comment.id, comment.upvotes)}
+                                                            className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-[#2513ec] transition-colors"
+                                                        >
+                                                            <Heart size={14} className={(comment.upvotes || 0) > 0 ? 'fill-[#2513ec] text-[#2513ec]' : ''} />
+                                                            {comment.upvotes}
                                                         </button>
-                                                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400">42</span>
+                                                        <button className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">
+                                                            Reply
+                                                        </button>
                                                     </div>
-                                                    <button className="text-xs font-bold text-slate-500 hover:text-[#2513ec] transition-colors">Reply</button>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    ))}
                                 </div>
-                            </div>
-                        </div>
+                            </>
+                        )}
                     </main>
 
-                    {/* Right Column: Related (Desktop only) */}
                     <aside className="hidden xl:flex w-80 flex-col py-6 pr-6 gap-6 sticky top-0 h-screen overflow-y-auto">
-                        {/* Related Communities Card */}
                         <div className="bg-white dark:bg-[#1A1A24] rounded-xl border border-slate-200 dark:border-white/10 p-5 shadow-sm">
-                            <h3 className="text-slate-900 dark:text-white font-bold text-base mb-4">Related Communities</h3>
+                            <h3 className="text-slate-900 dark:text-white font-bold text-base mb-4">{t('relatedCommunities', 'Related Communities')}</h3>
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -319,22 +645,7 @@ const PostThreadPage = () => {
                                         <Plus size={18} />
                                     </button>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="size-10 rounded-lg bg-indigo-900/30 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
-                                            <Monitor size={24} />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-slate-900 dark:text-white">Digital Nomads</span>
-                                            <span className="text-xs text-slate-500">1.2m members</span>
-                                        </div>
-                                    </div>
-                                    <button className="bg-slate-100 dark:bg-white/5 hover:bg-[#2513ec] hover:text-white text-slate-900 dark:text-white p-2 rounded-full transition-colors">
-                                        <Plus size={18} />
-                                    </button>
-                                </div>
                             </div>
-                            <button className="w-full mt-4 py-2 text-xs font-bold text-[#2513ec] hover:underline">See All</button>
                         </div>
                     </aside>
                 </div>

@@ -1,9 +1,55 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
 
 const ProfileSetup = () => {
     const navigate = useNavigate();
+    const { user } = useUser();
+    const [formData, setFormData] = React.useState({
+        displayName: user?.fullName || '',
+        username: user?.username || ''
+    });
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+    const handleNext = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            await user.update({
+                unsafeMetadata: {
+                    ...user.unsafeMetadata,
+                    displayName: formData.displayName,
+                    username: formData.username
+                }
+            });
+
+            // Sync to Supabase
+            const { supabase } = await import('../lib/supabase');
+            console.log('[ProfileSetup] Syncing to Supabase for user:', user.id);
+            const { error: supabaseError } = await supabase
+                .from('profiles')
+                .upsert({
+                    id: user.id,
+                    username: formData.username,
+                    avatar_url: user.imageUrl
+                });
+
+            if (supabaseError) {
+                console.error("[ProfileSetup] Supabase sync failed:", supabaseError);
+                alert(`Supabase sync failed: ${supabaseError.message}. Please try again.`);
+                setIsSubmitting(false);
+                return; // Stop here if sync fails
+            }
+            console.log('[ProfileSetup] Supabase sync successful');
+            navigate('/interests');
+        } catch (error) {
+            console.error("Failed to save profile:", error);
+            navigate('/interests');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-[#111118]">
@@ -45,6 +91,8 @@ const ProfileSetup = () => {
                             <span className="text-black font-bold text-lg uppercase tracking-tight dark:text-white">Display Name</span>
                             <input
                                 type="text"
+                                value={formData.displayName}
+                                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                                 placeholder="e.g. Neo Anderson"
                                 className="w-full bg-white border-4 border-black rounded-lg h-14 px-4 text-lg font-bold placeholder:text-slate-400 focus:outline-none focus:ring-0 shadow-brutalist focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all duration-150 dark:bg-[#111118] dark:border-white dark:text-white dark:shadow-[4px_4px_0px_0px_#ffffff]"
                             />
@@ -55,6 +103,8 @@ const ProfileSetup = () => {
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-black font-black text-lg dark:text-white">@</span>
                                 <input
                                     type="text"
+                                    value={formData.username}
+                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                     placeholder="username"
                                     className="w-full bg-white border-4 border-black rounded-lg h-14 pl-10 pr-4 text-lg font-bold placeholder:text-slate-400 focus:outline-none focus:ring-0 shadow-brutalist focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all duration-150 dark:bg-[#111118] dark:border-white dark:text-white dark:shadow-[4px_4px_0px_0px_#ffffff]"
                                 />
@@ -86,10 +136,11 @@ const ProfileSetup = () => {
                     {/* CTA Button */}
                     <button
                         type="button"
-                        onClick={() => navigate('/onboarding/interests')}
-                        className="mt-6 w-full bg-black text-white border-4 border-black rounded-xl h-16 text-xl font-bold uppercase tracking-wider shadow-brutalist hover:bg-primary hover:border-black hover:shadow-brutalist hover:-translate-y-1 active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all duration-100 flex items-center justify-center gap-2 group dark:bg-white dark:text-black dark:border-white dark:shadow-[4px_4px_0px_0px_#ffffff] dark:hover:bg-primary dark:hover:text-white dark:hover:border-white"
+                        onClick={handleNext}
+                        disabled={isSubmitting}
+                        className="mt-6 w-full bg-black text-white border-4 border-black rounded-xl h-16 text-xl font-bold uppercase tracking-wider shadow-brutalist hover:bg-primary hover:border-black hover:shadow-brutalist hover:-translate-y-1 active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all duration-100 flex items-center justify-center gap-2 group dark:bg-white dark:text-black dark:border-white dark:shadow-[4px_4px_0px_0px_#ffffff] dark:hover:bg-primary dark:hover:text-white dark:hover:border-white disabled:opacity-50"
                     >
-                        Enter EchoBoard
+                        {isSubmitting ? 'Saving...' : 'Enter EchoBoard'}
                         <ArrowRight className="group-hover:translate-x-1 transition-transform" size={24} strokeWidth={3} />
                     </button>
                 </form>

@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Sun, Moon, Menu, X, MessageCircle } from 'lucide-react';
+import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react';
+import { useTranslation } from 'react-i18next';
 
 const Layout = () => {
+    const { t } = useTranslation();
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
+    const { user } = useUser();
+
+    const onboardingComplete = user?.publicMetadata?.onboardingComplete || user?.unsafeMetadata?.onboardingComplete;
 
     // Check system preference on mount
     useEffect(() => {
@@ -49,13 +55,13 @@ const Layout = () => {
                         {/* Desktop Nav */}
                         <nav className="hidden md:flex items-center gap-8">
                             <Link to="/features" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 transition-all ${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}>
-                                Features
+                                {t('features')}
                             </Link>
                             <Link to="/about" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 transition-all ${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}>
-                                About
+                                {t('about')}
                             </Link>
                             <Link to="/pricing" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 transition-all ${isDarkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-black'}`}>
-                                Pricing
+                                {t('pricing')}
                             </Link>
                         </nav>
 
@@ -64,13 +70,30 @@ const Layout = () => {
                             <button onClick={toggleTheme} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-white/10 text-yellow-300' : 'hover:bg-black/5 text-slate-600'}`}>
                                 {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                             </button>
-                            {/* Login Button */}
-                            <Link to="/login" className={`hidden md:flex h-10 items-center justify-center rounded-lg border-2 border-black bg-white px-6 text-sm font-bold text-black shadow-brutalist hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all active:bg-gray-50 dark:bg-[#1A1A24] dark:text-white dark:border-white`}>
-                                Login
-                            </Link>
-                            <button className={`hidden sm:flex h-10 items-center justify-center rounded-lg border-2 px-6 text-sm font-bold shadow-brutalist hover:shadow-brutalist-hover hover:translate-x-[2px] hover:translate-y-[2px] transition-all ${isDarkMode ? 'bg-[#6C63FF] border-white text-white' : 'bg-[#4F46E5] border-black text-white'}`}>
-                                Join Free
-                            </button>
+
+                            <SignedOut>
+                                {/* Login Button */}
+                                <Link to="/login" className={`hidden md:flex h-10 items-center justify-center rounded-lg border-2 border-black bg-white px-6 text-sm font-bold text-black shadow-brutalist hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all active:bg-gray-50 dark:bg-[#1A1A24] dark:text-white dark:border-white`}>
+                                    {t('login')}
+                                </Link>
+                                <Link
+                                    to="/login?mode=signup"
+                                    className={`hidden sm:flex h-10 items-center justify-center rounded-lg border-2 px-6 text-sm font-bold shadow-brutalist hover:shadow-brutalist-hover hover:translate-x-[2px] hover:translate-y-[2px] transition-all ${isDarkMode ? 'bg-[#6C63FF] border-white text-white' : 'bg-[#4F46E5] border-black text-white'}`}
+                                >
+                                    {t('joinFree')}
+                                </Link>
+                            </SignedOut>
+
+                            <SignedIn>
+                                <div className="flex items-center gap-4">
+                                    {onboardingComplete && (
+                                        <Link to="/feed" className={`text-sm font-bold hover:underline decoration-2 underline-offset-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                                            {t('goToFeed')}
+                                        </Link>
+                                    )}
+                                    <UserButton afterSignOutUrl="/" />
+                                </div>
+                            </SignedIn>
 
                             {/* Mobile Menu Button */}
                             <button className="md:hidden p-2" onClick={toggleMobileMenu}>
@@ -89,14 +112,29 @@ const Layout = () => {
                         <Link to="/about" className={`text-lg font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                             About
                         </Link>
-                        <a href="#" className={`text-lg font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                        <Link to="/pricing" className={`text-lg font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                             Pricing
-                        </a>
+                        </Link>
                         <div className="h-px bg-slate-200 w-full my-2"></div>
-                        <button className={`text-left font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>Sign In</button>
-                        <button className={`h-12 w-full rounded-lg border-2 font-bold shadow-brutalist active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all ${isDarkMode ? 'bg-[#6C63FF] border-white text-white' : 'bg-[#4F46E5] border-black text-white'}`}>
-                            Join Free
-                        </button>
+
+                        <SignedOut>
+                            <Link to="/login" className={`text-left font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>Sign In</Link>
+                            <Link
+                                to="/login?mode=signup"
+                                className={`h-12 w-full flex items-center justify-center rounded-lg border-2 font-bold shadow-brutalist active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all ${isDarkMode ? 'bg-[#6C63FF] border-white text-white' : 'bg-[#4F46E5] border-black text-white'}`}
+                            >
+                                Join Free
+                            </Link>
+                        </SignedOut>
+
+                        <SignedIn>
+                            {onboardingComplete && (
+                                <Link to="/feed" className={`text-lg font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>Go to Feed</Link>
+                            )}
+                            <div className="flex justify-start py-2">
+                                <UserButton afterSignOutUrl="/" />
+                            </div>
+                        </SignedIn>
                     </div>
                 )}
             </header>
