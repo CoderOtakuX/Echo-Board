@@ -6,7 +6,7 @@
 
 *The first social platform with real-time translation and deep cultural context.*
 
-![EchoBoard Hero](docs/hero.png)
+![EchoBoard Hero](docs/Thumbnail.png)
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
@@ -45,7 +45,7 @@
 
 | Desktop Feed | Communities | Mobile View |
 |---|---|---|
-| ![Feed](docs/hero.png) | ![Communities](docs/communities.png) | ![Mobile](docs/mobile.png) |
+| ![Feed](docs/main_dashboard.png) | ![Communities](docs/Communities_section.png) | ![Mobile](docs/Mobile_Look.png) |
 
 </div>
 
