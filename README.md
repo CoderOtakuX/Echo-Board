@@ -15,7 +15,7 @@
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Live Demo](#) · [Report Bug](../../issues) · [Request Feature](../../issues)
+[Live Demo](https://echoboard-nu.vercel.app/) · [Report Bug](../../issues) · [Request Feature](../../issues) ·  [Video](https://youtu.be/xL6YKzt9NkY)
 
 </div>
 
